@@ -201,7 +201,6 @@ elif page == "Crypto":
     )
 
     st.write("Selected cryptos:", selected_coins)
-    
     for coin_name in selected_coins:
         st.subheader(f"📊 Crypto: {coin_name}")
         coin_id = crypto_dict[coin_name]

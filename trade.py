@@ -35,32 +35,25 @@ def signal_generator(df):
         return "Hold"
     
 
-
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
     params = {
-        'vs_currency': 'usd',
-        'days': days,
-        'interval': 'daily'
+        "vs_currency": "usd",
+        "days": days,
+        "interval": "daily"
     }
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()  # Raise error for bad response
-        data = response.json()
+    response = requests.get(url, params=params)
+    data = response.json()
 
-        prices = data['prices']  # List of [timestamp, price]
-        df = pd.DataFrame(prices, columns=['timestamp', 'Close'])
+    if "prices" not in data:
+        return pd.DataFrame()
 
-        # Convert timestamp (ms) to datetime
-        df['Date'] = pd.to_datetime(df['timestamp'], unit='ms')
-        df.set_index('Date', inplace=True)
-        df.drop(columns=['timestamp'], inplace=True)
-
-        return df
-
-    except Exception as e:
-        print(f"Error fetching data for {coin_id}: {e}")
-        return pd.DataFrame()  # Return empty DataFrame on failure
+    prices = data["prices"]
+    df = pd.DataFrame(prices, columns=["Timestamp", "Close"])
+    df["Date"] = pd.to_datetime(df["Timestamp"], unit="ms")
+    df.set_index("Date", inplace=True)
+    df.drop("Timestamp", axis=1, inplace=True)
+    return df
 
 # ----- Login Screen -----
 st.title("Login")
@@ -146,10 +139,10 @@ if page == "Stocks":
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
 
-if page == "Crypto":
+elif page == "Crypto":
     st.title("Crypto Tracker")
     if st.button("🔄 Refresh Data"):
-        st.experimental_rerun()
+        st.rerun()
 
     crypto_dict = {
         "Bitcoin": "bitcoin",
@@ -169,36 +162,65 @@ if page == "Crypto":
         options=list(crypto_dict.keys()),
         default=list(crypto_dict.keys())
     )
-
-    summary_data = []
+    coins = [crypto_dict[name] for name in selected_coins]
 
     for coin_name in selected_coins:
+        st.subheader(f"📊 Crypto: {coin_name}")
         coin_id = crypto_dict[coin_name]
         df = get_crypto_data(coin_id, days=60)
+
         if df.empty:
-            st.warning(f"⚠️ Error fetching data for {coin_name}.")
+            st.warning("⚠️ Error fetching data.")
             continue
 
+        # Calculate indicators: SMA, EMA, RSI
         df['SMA'] = calculate_sma(df)
         df['EMA'] = calculate_ema(df)
         df['RSI'] = calculate_rsi(df)
 
+        # Generate buy/sell/hold signal
         signal = signal_generator(df)
 
         current_price = float(df['Close'].dropna().iloc[-1])
-        sma = df['SMA'].iloc[-1]
-        ema = df['EMA'].iloc[-1]
-        rsi = df['RSI'].iloc[-1]
 
-        summary_data.append({
-            "Crypto": coin_name,
-            "Price ($)": f"{current_price:.2f}",
-            "SMA(20)": f"{sma:.2f}",
-            "EMA(20)": f"{ema:.2f}",
-            "RSI": f"{rsi:.2f}",
-            "Signal": signal
-        })
+        # Display key metrics in columns
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("💵 Current Price", f"${current_price:.2f}")
+        col2.metric("📈 RSI", f"{df['RSI'].iloc[-1]:.2f}")
+        col3.metric("📉 SMA(20)", f"${df['SMA'].iloc[-1]:.2f}")
+        col4.metric("⚡ EMA(20)", f"${df['EMA'].iloc[-1]:.2f}")
 
-    if summary_data:
-        summary_df = pd.DataFrame(summary_data)
-        st.dataframe(summary_df)
+        st.markdown(f"📌 **Signal:** {signal}")
+
+        if signal == "Buy":
+            st.info("🛍 Suggested: Consider Buying.")
+        elif signal == "Sell":
+            st.warning("📤 Suggested: Consider Selling.")
+        else:
+            st.write("⏸ Hold – no action recommended.")
+
+        # Price chart with Close, SMA, EMA
+        price_df = df.reset_index()
+        price_chart = (
+            alt.Chart(price_df)
+            .transform_fold(['Close', 'SMA', 'EMA'], as_=['Type', 'Price'])
+            .mark_line()
+            .encode(x='Date:T', y='Price:Q', color='Type:N')
+            .properties(title=f"{coin_name} Close Price, SMA(20) & EMA(20)")
+        )
+        st.altair_chart(price_chart, use_container_width=True)
+
+        # RSI chart with scale domain [0, 100]
+        rsi_df = df.reset_index()
+        rsi_chart = (
+            alt.Chart(rsi_df)
+            .mark_line(color='orange')
+            .encode(
+                x='Date:T',
+                y=alt.Y('RSI:Q', scale=alt.Scale(domain=[0, 100]))
+            )
+            .properties(title=f"{coin_name} RSI (14-day)")
+        )
+        st.altair_chart(rsi_chart, use_container_width=True)
+
+

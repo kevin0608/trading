@@ -428,9 +428,14 @@ elif page == "Crypto":
 elif page == "Summary":
     st.title("Summary: Stocks & Crypto Overview")
 
-    # Stocks summary dataframe
-    selected_names = st.multiselect("🔍 Select companies for summary:", options=list(company_dict.keys()), default=list(company_dict.keys())[:200])
+    with st.expander("🔍 Select companies for summary (click to expand)"):
+        selected_names = st.multiselect(
+            "Select companies:",
+            options=list(company_dict.keys()),
+            default=list(company_dict.keys())[:200]
+        )
     companies = [company_dict[name] for name in selected_names]
+
 
     stock_rows = []
     for ticker in companies:
@@ -464,8 +469,12 @@ elif page == "Summary":
         "EMA(20)": safe_currency_format,
     }))
 
-    # Crypto summary dataframe
-    selected_coins = st.multiselect("🔍 Select cryptocurrencies for summary:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys())[:50])
+    with st.expander("🔍 Select cryptocurrencies for summary (click to expand)"):
+        selected_coins = st.multiselect(
+            "Select cryptocurrencies:",
+            options=list(crypto_dict.keys()),
+            default=list(crypto_dict.keys())[:50]
+        )
     coins = [crypto_dict[name] for name in selected_coins]
 
     crypto_rows = []

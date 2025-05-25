@@ -159,16 +159,17 @@ if page == "Stocks":
         pivot_df['R2'] = [r2] * len(pivot_df)
         pivot_df['S2'] = [s2] * len(pivot_df)
 
-        # Ensure numeric dtype and handle any non-numeric silently
         cols_min = ['Close', 'S1', 'S2']
         cols_max = ['Close', 'R1', 'R2']
 
         pivot_df[cols_min] = pivot_df[cols_min].apply(pd.to_numeric, errors='coerce')
         pivot_df[cols_max] = pivot_df[cols_max].apply(pd.to_numeric, errors='coerce')
 
-        # Calculate min and max ignoring NaNs
-        y_min = min(np.nanmin(pivot_df[cols_min].values), pivot)
-        y_max = max(np.nanmax(pivot_df[cols_max].values), pivot)
+        pivot_min = pivot.min() if hasattr(pivot, 'min') else pivot
+        pivot_max = pivot.max() if hasattr(pivot, 'max') else pivot
+
+        y_min = min(np.nanmin(pivot_df[cols_min].values), pivot_min)
+        y_max = max(np.nanmax(pivot_df[cols_max].values), pivot_max)
 
         pivot_chart = (
             alt.Chart(pivot_df)

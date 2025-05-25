@@ -20,6 +20,13 @@ def calculate_sma(data, window=20):
 def calculate_ema(data, window=20):
     return data['Close'].ewm(span=window, adjust=False).mean()
 
+def calculate_macd(data, fast=12, slow=26, signal=9):
+    exp1 = data['Close'].ewm(span=fast, adjust=False).mean()
+    exp2 = data['Close'].ewm(span=slow, adjust=False).mean()
+    macd = exp1 - exp2
+    macd_signal = macd.ewm(span=signal, adjust=False).mean()
+    return macd, macd_signal
+
 def signal_generator(df):
     try:
         rsi = float(df['RSI'].dropna().iloc[-1])
@@ -33,38 +40,41 @@ def signal_generator(df):
 
     score = 0
 
-    # RSI
-    if rsi < 40:
+    # RSI with finer gradation and weight 2
+    if rsi < 30:
+        score += 3
+    elif rsi < 40:
         score += 1
+    elif rsi > 70:
+        score -= 3
     elif rsi > 60:
         score -= 1
 
-    # Price vs EMA
+    # Price vs EMA weight 1
     if close > ema:
         score += 1
     else:
         score -= 1
 
-    # EMA vs SMA trend
+    # EMA vs SMA weight 1
     if ema > sma:
         score += 1
     else:
         score -= 1
 
-    # MACD bullish or bearish crossover
+    # MACD crossover weight 2
     if macd > macd_signal:
-        score += 1
+        score += 2
     else:
-        score -= 1
+        score -= 2
 
-    # Generate signal based on score threshold
+    # Signal thresholds
     if score >= 3:
         return "Buy"
     elif score <= -3:
         return "Sell"
     else:
         return "Hold"
-
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"

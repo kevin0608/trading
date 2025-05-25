@@ -140,41 +140,6 @@ if page == "Stocks":
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
 
 elif page == "Crypto":
-    st.title("💰 Crypto Tracker")
-
-    crypto_dict = {
-        "Bitcoin": "bitcoin",
-        "Ethereum": "ethereum",
-        "Binance Coin": "binancecoin",
-        "Cardano": "cardano",
-        "Dogecoin": "dogecoin"
-    }
-
-    selected_coins = st.multiselect("🔍 Select cryptocurrencies to track:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys()))
-
-    for coin_name in selected_coins:
-        st.subheader(f"📊 Crypto: {coin_name}")
-        coin_id = crypto_dict[coin_name]
-        df = get_crypto_data(coin_id, days=60)
-
-        if df.empty:
-            st.warning("⚠️ Error fetching data.")
-            continue
-
-        # Calculate SMA and EMA for crypto Close price
-        df['SMA'] = df['Close'].rolling(window=20).mean()
-        df['EMA'] = df['Close'].ewm(span=20, adjust=False).mean()
-
-        price_df = df.reset_index()
-        price_chart = (
-            alt.Chart(price_df)
-            .transform_fold(['Close', 'SMA', 'EMA'], as_=['Type', 'Price'])
-            .mark_line()
-            .encode(x='Date:T', y='Price:Q', color='Type:N')
-            .properties(title=f"{coin_name} Close Price, SMA(20) & EMA(20)")
-        )
-        st.altair_chart(price_chart, use_container_width=True)
-elif page == "Crypto":
     st.title("Crypto Tracker")
     if st.button("🔄 Refresh Data"):
         st.rerun()
@@ -257,3 +222,4 @@ elif page == "Crypto":
             .properties(title=f"{coin_name} RSI (14-day)")
         )
         st.altair_chart(rsi_chart, use_container_width=True)
+

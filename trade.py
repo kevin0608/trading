@@ -29,17 +29,16 @@ def calculate_macd(data, fast=12, slow=26, signal=9):
 
 def signal_generator(df):
     try:
-        rsi = float(df['RSI'].dropna().iloc[-1])
-        close = float(df['Close'].dropna().iloc[-1])
-        ema = float(df['EMA'].dropna().iloc[-1])
-        sma = float(df['SMA'].dropna().iloc[-1])
-        macd = float(df['MACD'].dropna().iloc[-1])
-        macd_signal = float(df['MACD Signal'].dropna().iloc[-1])
-    except (IndexError, KeyError, ValueError):
+        last_row = df.dropna(subset=['RSI', 'SMA', 'EMA', 'MACD', 'MACD Signal', 'Close']).iloc[-1]
+    except IndexError:
         return "Error"
 
-    print(f"RSI: {rsi:.2f}, Close: {close:.2f}, EMA: {ema:.2f}, SMA: {sma:.2f}, MACD: {macd:.2f}, MACD Signal: {macd_signal:.2f}")
-
+    rsi = float(last_row['RSI'])
+    close = float(last_row['Close'])
+    ema = float(last_row['EMA'])
+    sma = float(last_row['SMA'])
+    macd = float(last_row['MACD'])
+    macd_signal = float(last_row['MACD Signal'])
     score = 0
 
     # RSI scoring
@@ -73,8 +72,6 @@ def signal_generator(df):
         return "Sell"
     else:
         return "Hold"
-
-
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"

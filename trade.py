@@ -32,13 +32,14 @@ def signal_generator(df):
         rsi = float(df['RSI'].dropna().iloc[-1])
         close = float(df['Close'].dropna().iloc[-1])
         ema = float(df['EMA'].dropna().iloc[-1])
-    except (IndexError, KeyError, ValueError):
-        return "Hold"
+    except (IndexError, KeyError, ValueError) as e:
+        return "Error"
 
-    # RSI zones + EMA trend filter
-    if rsi < 35 and close > ema:
+    print(f"RSI: {rsi}, Close: {close}, EMA: {ema}")
+
+    if rsi < 40:
         return "Buy"
-    elif rsi > 65 and close < ema:
+    elif rsi > 60:
         return "Sell"
     else:
         return "Hold"

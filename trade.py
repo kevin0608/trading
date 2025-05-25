@@ -26,15 +26,26 @@ def signal_generator(df):
         sma = float(df['SMA'].dropna().iloc[-1])
         ema = float(df['EMA'].dropna().iloc[-1])
         close = float(df['Close'].dropna().iloc[-1])
-    except IndexError:
+        macd = float(df['MACD'].dropna().iloc[-1])
+        macd_signal = float(df['MACD Signal'].dropna().iloc[-1])
+    except (IndexError, KeyError, ValueError):
         return "Hold"
 
-    if (rsi < 30) and (close > ema):
-        return "Buy"
-    elif (rsi > 70) and (close < ema):
-        return "Sell"
-    else:
-        return "Hold"
+    signal = "Hold"
+
+    # Overbought/Oversold condition
+    if rsi < 30 and close > ema and macd > macd_signal:
+        signal = "Buy"
+    elif rsi > 70 and close < ema and macd < macd_signal:
+        signal = "Sell"
+
+    # Trend confirmation: EMA > SMA with bullish MACD
+    elif close > ema > sma and macd > macd_signal:
+        signal = "Buy"
+    elif close < ema < sma and macd < macd_signal:
+        signal = "Sell"
+
+    return signal
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"

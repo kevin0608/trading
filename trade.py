@@ -38,35 +38,27 @@ def signal_generator(df):
     except (IndexError, KeyError, ValueError):
         return "Hold"
 
-    print(f"RSI: {rsi}, SMA: {sma}, EMA: {ema}, Close: {close}, MACD: {macd}, MACD Signal: {macd_signal}")
-
     score = 0
 
-    # Loosened RSI thresholds
-    if rsi < 25:
+    # Ultra-loose RSI thresholds
+    if rsi < 40:
         score += 1
-    elif rsi > 75:
-        score -= 1
+    elif rsi > 60:
+        score += 0  # Don't subtract, just avoid adding
 
     if close > ema:
         score += 1
-    else:
-        score -= 1
 
     if ema > sma:
         score += 1
-    else:
-        score -= 1
 
     if macd > macd_signal:
         score += 1
-    else:
-        score -= 1
 
-    # Loosened scoring threshold
+    # Forcing logic to show Buy/Sell easier
     if score >= 1:
         return "Buy"
-    elif score <= -1:
+    elif score == 0 and rsi > 60:
         return "Sell"
     else:
         return "Hold"

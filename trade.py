@@ -429,7 +429,7 @@ elif page == "Summary":
     st.title("Summary: Stocks & Crypto Overview")
 
     # Stocks summary dataframe
-    selected_names = st.multiselect("🔍 Select companies for summary:", options=list(company_dict.keys()), default=list(company_dict.keys())[:50])
+    selected_names = st.multiselect("🔍 Select companies for summary:", options=list(company_dict.keys()), default=list(company_dict.keys())[:200])
     companies = [company_dict[name] for name in selected_names]
 
     stock_rows = []

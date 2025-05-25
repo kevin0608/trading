@@ -152,7 +152,6 @@ if page == "Stocks":
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
 
-        # Ensure all pivot lines are repeated
         pivot_df = data[['Close']].dropna().reset_index()
         pivot_df['Pivot'] = [pivot] * len(pivot_df)
         pivot_df['R1'] = [r1] * len(pivot_df)
@@ -160,9 +159,16 @@ if page == "Stocks":
         pivot_df['R2'] = [r2] * len(pivot_df)
         pivot_df['S2'] = [s2] * len(pivot_df)
 
-        # Set y-domain to include pivot levels
-        y_min = min(pivot_df[['Close', 'S1', 'S2']].min().min(), pivot)
-        y_max = max(pivot_df[['Close', 'R1', 'R2']].max().max(), pivot)
+        # Ensure numeric dtype and handle any non-numeric silently
+        cols_min = ['Close', 'S1', 'S2']
+        cols_max = ['Close', 'R1', 'R2']
+
+        pivot_df[cols_min] = pivot_df[cols_min].apply(pd.to_numeric, errors='coerce')
+        pivot_df[cols_max] = pivot_df[cols_max].apply(pd.to_numeric, errors='coerce')
+
+        # Calculate min and max ignoring NaNs
+        y_min = min(np.nanmin(pivot_df[cols_min].values), pivot)
+        y_max = max(np.nanmax(pivot_df[cols_max].values), pivot)
 
         pivot_chart = (
             alt.Chart(pivot_df)
@@ -176,6 +182,7 @@ if page == "Stocks":
             .properties(title=f"{ticker} Close Price & Pivot Points")
         )
         st.altair_chart(pivot_chart, use_container_width=True)
+
 
 elif page == "Crypto":
     st.title("₿ Real-Time Crypto Tracker (API Based)")

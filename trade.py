@@ -79,7 +79,7 @@ if password != "2121":
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox("Go to", ["Stocks", "Crypto", "Summary"])
 
-# Company and Crypto dictionaries
+# Expanded Company Dictionary (50 popular stocks)
 company_dict = {
     "Apple (AAPL)": "AAPL",
     "Tesla (TSLA)": "TSLA",
@@ -91,9 +91,49 @@ company_dict = {
     "Netflix (NFLX)": "NFLX",
     "AMD (AMD)": "AMD",
     "PayPal (PYPL)": "PYPL",
-    # Add more companies here if you want, up to 50 max
+    "Visa (V)": "V",
+    "JPMorgan Chase (JPM)": "JPM",
+    "Johnson & Johnson (JNJ)": "JNJ",
+    "Walmart (WMT)": "WMT",
+    "Procter & Gamble (PG)": "PG",
+    "Mastercard (MA)": "MA",
+    "Disney (DIS)": "DIS",
+    "Intel (INTC)": "INTC",
+    "Coca-Cola (KO)": "KO",
+    "PepsiCo (PEP)": "PEP",
+    "ExxonMobil (XOM)": "XOM",
+    "Berkshire Hathaway (BRK-B)": "BRK-B",
+    "Chevron (CVX)": "CVX",
+    "McDonald's (MCD)": "MCD",
+    "AbbVie (ABBV)": "ABBV",
+    "Salesforce (CRM)": "CRM",
+    "Adobe (ADBE)": "ADBE",
+    "Oracle (ORCL)": "ORCL",
+    "Cisco (CSCO)": "CSCO",
+    "Toyota (TM)": "TM",
+    "IBM (IBM)": "IBM",
+    "Qualcomm (QCOM)": "QCOM",
+    "Nike (NKE)": "NKE",
+    "Starbucks (SBUX)": "SBUX",
+    "Costco (COST)": "COST",
+    "Paychex (PAYX)": "PAYX",
+    "Ford (F)": "F",
+    "General Motors (GM)": "GM",
+    "Lockheed Martin (LMT)": "LMT",
+    "Honeywell (HON)": "HON",
+    "3M (MMM)": "MMM",
+    "Delta Air Lines (DAL)": "DAL",
+    "Boeing (BA)": "BA",
+    "Goldman Sachs (GS)": "GS",
+    "Morgan Stanley (MS)": "MS",
+    "American Express (AXP)": "AXP",
+    "Verizon (VZ)": "VZ",
+    "AT&T (T)": "T",
+    "eBay (EBAY)": "EBAY",
+    "Snap (SNAP)": "SNAP"
 }
 
+# Expanded Crypto Dictionary (50 popular cryptocurrencies)
 crypto_dict = {
     "Bitcoin": "bitcoin",
     "Ethereum": "ethereum",
@@ -105,8 +145,47 @@ crypto_dict = {
     "Ripple": "ripple",
     "Litecoin": "litecoin",
     "Avalanche": "avalanche-2",
-    # Add more cryptos here if you want, up to 50 max
+    "Shiba Inu": "shiba-inu",
+    "Chainlink": "chainlink",
+    "Polygon": "matic-network",
+    "Stellar": "stellar",
+    "VeChain": "vechain",
+    "Tron": "tron",
+    "EOS": "eos",
+    "Monero": "monero",
+    "Algorand": "algorand",
+    "Tezos": "tezos",
+    "Cosmos": "cosmos",
+    "Filecoin": "filecoin",
+    "Bitcoin Cash": "bitcoin-cash",
+    "NEO": "neo",
+    "IOTA": "iota",
+    "Dash": "dash",
+    "Zcash": "zcash",
+    "Maker": "maker",
+    "Kusama": "kusama",
+    "Theta Network": "theta-token",
+    "Elrond": "elrond-erd-2",
+    "Compound": "compound-governance-token",
+    "Aave": "aave",
+    "SushiSwap": "sushi",
+    "Yearn Finance": "yearn-finance",
+    "Terra": "terra-luna",
+    "Fantom": "fantom",
+    "Harmony": "harmony",
+    "Hedera": "hedera-hashgraph",
+    "Celo": "celo",
+    "Enjin Coin": "enjincoin",
+    "Basic Attention Token": "basic-attention-token",
+    "Decentraland": "decentraland",
+    "The Graph": "the-graph",
+    "Loopring": "loopring",
+    "Bitcoin SV": "bitcoin-cash-sv",
+    "Qtum": "qtum",
+    "Zilliqa": "zilliqa",
+    "Waves": "waves"
 }
+
 
 # Stocks Page
 if page == "Stocks":
@@ -237,7 +316,7 @@ elif page == "Summary":
     capital = st.number_input("💰 Enter your starting capital (£):", min_value=1, value=500)
 
     # Stocks summary dataframe
-    selected_names = st.multiselect("🔍 Select companies for summary:", options=list(company_dict.keys()), default=list(company_dict.keys())[:10])
+    selected_names = st.multiselect("🔍 Select companies for summary:", options=list(company_dict.keys()), default=list(company_dict.keys())[:50])
     companies = [company_dict[name] for name in selected_names]
 
     stock_rows = []
@@ -270,7 +349,7 @@ elif page == "Summary":
     }))
 
     # Crypto summary dataframe
-    selected_coins = st.multiselect("🔍 Select cryptocurrencies for summary:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys())[:10])
+    selected_coins = st.multiselect("🔍 Select cryptocurrencies for summary:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys())[:50])
     coins = [crypto_dict[name] for name in selected_coins]
 
     crypto_rows = []

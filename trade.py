@@ -34,6 +34,7 @@ def signal_generator(df):
     else:
         return "Hold"
     
+
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
     params = {
@@ -99,9 +100,8 @@ def fetch_crypto_data(coins):
         })
     return pd.DataFrame(all_data)
 
-# ----- Main App -----
 
-# Login Screen
+# ----- Login Screen -----
 st.title("Login")
 password = st.text_input("Enter password:", type="password")
 if password != "2121":
@@ -111,92 +111,31 @@ if password != "2121":
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox("Go to", ["Stocks", "Crypto", "Summary"])
 
-# Dictionaries extended up to ~50 companies & cryptos for summary page demo
-company_dict = {
-    "Apple (AAPL)": "AAPL",
-    "Tesla (TSLA)": "TSLA",
-    "Microsoft (MSFT)": "MSFT",
-    "Google (GOOGL)": "GOOGL",
-    "Amazon (AMZN)": "AMZN",
-    "NVIDIA (NVDA)": "NVDA",
-    "Meta (META)": "META",
-    "Netflix (NFLX)": "NFLX",
-    "AMD (AMD)": "AMD",
-    "PayPal (PYPL)": "PYPL",
-    # extra tickers examples (add more if you want)
-    "Intel (INTC)": "INTC",
-    "Cisco (CSCO)": "CSCO",
-    "IBM (IBM)": "IBM",
-    "Qualcomm (QCOM)": "QCOM",
-    "Salesforce (CRM)": "CRM",
-    "Adobe (ADBE)": "ADBE",
-    "Square (SQ)": "SQ",
-    "Shopify (SHOP)": "SHOP",
-    "Boeing (BA)": "BA",
-    "Chevron (CVX)": "CVX",
-    "Coca-Cola (KO)": "KO",
-    "PepsiCo (PEP)": "PEP",
-    "Walmart (WMT)": "WMT",
-    "Visa (V)": "V",
-    "Mastercard (MA)": "MA",
-    "Disney (DIS)": "DIS",
-    "Johnson & Johnson (JNJ)": "JNJ",
-    "McDonald's (MCD)": "MCD",
-    "Procter & Gamble (PG)": "PG",
-    "Verizon (VZ)": "VZ",
-    "ExxonMobil (XOM)": "XOM",
-    "Bank of America (BAC)": "BAC",
-    "JPMorgan Chase (JPM)": "JPM",
-    "AT&T (T)": "T",
-    "Pfizer (PFE)": "PFE",
-}
-
-crypto_dict = {
-    "Bitcoin": "bitcoin",
-    "Ethereum": "ethereum",
-    "Binance Coin": "binancecoin",
-    "Cardano": "cardano",
-    "Dogecoin": "dogecoin",
-    "Solana": "solana",
-    "Polkadot": "polkadot",
-    "Ripple": "ripple",
-    "Litecoin": "litecoin",
-    "Avalanche": "avalanche-2",
-    # extra cryptos
-    "Shiba Inu": "shiba-inu",
-    "Chainlink": "chainlink",
-    "Polygon": "matic-network",
-    "Stellar": "stellar",
-    "VeChain": "vechain",
-    "Cosmos": "cosmos",
-    "Tron": "tron",
-    "EOS": "eos",
-    "Monero": "monero",
-    "Algorand": "algorand",
-    "Tezos": "tezos",
-    "IOTA": "iota",
-    "NEO": "neo",
-    "Zcash": "zcash",
-    "Dash": "dash",
-    "Waves": "waves",
-    "Maker": "maker",
-    "Kusama": "kusama",
-    "Compound": "compound-governance-token",
-    "Terra": "terra-luna",
-}
-
 if page == "Stocks":
     st.title("Stock Tracker")
     if st.button("🔄 Refresh Data"):
-        st.experimental_rerun()
+        st.rerun()
 
-    selected_names = st.multiselect("🔍 Select companies to track:", options=list(company_dict.keys()), default=list(company_dict.keys())[:10])
+    company_dict = {
+        "Apple (AAPL)": "AAPL",
+        "Tesla (TSLA)": "TSLA",
+        "Microsoft (MSFT)": "MSFT",
+        "Google (GOOGL)": "GOOGL",
+        "Amazon (AMZN)": "AMZN",
+        "NVIDIA (NVDA)": "NVDA",
+        "Meta (META)": "META",
+        "Netflix (NFLX)": "NFLX",
+        "AMD (AMD)": "AMD",
+        "PayPal (PYPL)": "PYPL"
+    }
+
+    selected_names = st.multiselect("🔍 Select companies to track:", options=list(company_dict.keys()), default=list(company_dict.keys()))
     companies = [company_dict[name] for name in selected_names]
     capital = st.number_input("💰 Enter your starting capital (£):", min_value=1, value=500)
 
     for ticker in companies:
         st.subheader(f"📊 Stock: {ticker}")
-        data = yf.download(ticker, period="60d", interval="1d", progress=False)
+        data = yf.download(ticker, period="60d", interval="1d")
         if data.empty:
             st.warning("⚠️ Error fetching data.")
             continue
@@ -211,8 +150,8 @@ if page == "Stocks":
         col1, col2, col3, col4, col5 = st.columns(5)
         col1.metric("💵 Current Price", f"${current_price:.2f}")
         col2.metric("📈 RSI", f"{data['RSI'].iloc[-1]:.2f}")
-        col3.metric("📉 SMA(20)", f"${data['SMA'].iloc[-1]:.2f}")
-        col4.metric("⚡ EMA(20)", f"${data['EMA'].iloc[-1]:.2f}")
+        col3.metric("📉 SMA(20)", f"£{data['SMA'].iloc[-1]:.2f}")
+        col4.metric("⚡ EMA(20)", f"£{data['EMA'].iloc[-1]:.2f}")
         col5.markdown(f"📌 **Signal:** {signal}")
 
         if signal == "Buy":
@@ -224,6 +163,7 @@ if page == "Stocks":
         else:
             st.write("⏸ Hold – no action recommended.")
 
+        
         price_df = data[['Close', 'SMA', 'EMA']].dropna().reset_index()
         price_chart = (
             alt.Chart(price_df)
@@ -234,46 +174,79 @@ if page == "Stocks":
         )
         st.altair_chart(price_chart, use_container_width=True)
 
-elif page == "Crypto":
-    st.title("Cryptocurrency Tracker")
-    if st.button("🔄 Refresh Data"):
-        st.experimental_rerun()
+        rsi_df = data[['RSI']].dropna().reset_index()
+        rsi_chart = (
+            alt.Chart(rsi_df)
+            .mark_line(color='orange')
+            .encode(x='Date:T', y='RSI:Q')
+            .properties(title=f"{ticker} RSI (14)").interactive()
+        )
+        threshold_30 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(30))
+        threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
+        st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
 
-    selected_coins = st.multiselect("🔍 Select cryptocurrencies to track:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys())[:10])
-    capital = st.number_input("💰 Enter your starting capital (£):", min_value=1, value=500)
+elif page == "Crypto":
+    st.title("Crypto Tracker")
+    if st.button("🔄 Refresh Data"):
+        st.rerun()
+
+    crypto_dict = {
+        "Bitcoin": "bitcoin",
+        "Ethereum": "ethereum",
+        "Binance Coin": "binancecoin",
+        "Cardano": "cardano",
+        "Dogecoin": "dogecoin",
+        "Solana": "solana",
+        "Polkadot": "polkadot",
+        "Ripple": "ripple",
+        "Litecoin": "litecoin",
+        "Avalanche": "avalanche-2"
+    }
+
+    selected_coins = st.multiselect(
+        "🔍 Select cryptocurrencies to track:",
+        options=list(crypto_dict.keys()),
+        default=list(crypto_dict.keys())
+    )
+    coins = [crypto_dict[name] for name in selected_coins]
 
     for coin_name in selected_coins:
+        st.subheader(f"📊 Crypto: {coin_name}")
         coin_id = crypto_dict[coin_name]
-        df = get_crypto_data(coin_id)
+        df = get_crypto_data(coin_id, days=60)
+
         if df.empty:
-            st.warning("⚠️ Error fetching data for " + coin_name)
+            st.warning("⚠️ Error fetching data.")
             continue
 
-        df['RSI'] = calculate_rsi(df)
+        # Calculate indicators: SMA, EMA, RSI
         df['SMA'] = calculate_sma(df)
         df['EMA'] = calculate_ema(df)
+        df['RSI'] = calculate_rsi(df)
 
+        # Generate buy/sell/hold signal
         signal = signal_generator(df)
+
         current_price = float(df['Close'].dropna().iloc[-1])
 
-        st.subheader(f"📊 Crypto: {coin_name}")
-        col1, col2, col3, col4, col5 = st.columns(5)
+        # Display key metrics in columns
+        col1, col2, col3, col4 = st.columns(4)
         col1.metric("💵 Current Price", f"${current_price:.2f}")
         col2.metric("📈 RSI", f"{df['RSI'].iloc[-1]:.2f}")
         col3.metric("📉 SMA(20)", f"${df['SMA'].iloc[-1]:.2f}")
         col4.metric("⚡ EMA(20)", f"${df['EMA'].iloc[-1]:.2f}")
-        col5.markdown(f"📌 **Signal:** {signal}")
+
+        st.markdown(f"📌 **Signal:** {signal}")
 
         if signal == "Buy":
-            position_size = capital * 0.25
-            quantity = position_size / current_price
-            st.info(f"🛍 Suggested Buy: £{position_size:.2f} (~{quantity:.4f} coins)")
+            st.info("🛍 Suggested: Consider Buying.")
         elif signal == "Sell":
-            st.warning("📤 Consider selling your position.")
+            st.warning("📤 Suggested: Consider Selling.")
         else:
             st.write("⏸ Hold – no action recommended.")
 
-        price_df = df[['Close', 'SMA', 'EMA']].dropna().reset_index()
+        # Price chart with Close, SMA, EMA
+        price_df = df.reset_index()
         price_chart = (
             alt.Chart(price_df)
             .transform_fold(['Close', 'SMA', 'EMA'], as_=['Type', 'Price'])
@@ -283,35 +256,18 @@ elif page == "Crypto":
         )
         st.altair_chart(price_chart, use_container_width=True)
 
-elif page == "Summary":
-    st.title("Summary Dashboard")
+        # RSI chart with scale domain [0, 100]
+        rsi_df = df.reset_index()
+        rsi_chart = (
+            alt.Chart(rsi_df)
+            .mark_line(color='orange')
+            .encode(
+                x='Date:T',
+                y=alt.Y('RSI:Q', scale=alt.Scale(domain=[0, 100]))
+            )
+            .properties(title=f"{coin_name} RSI (14-day)")
+        )
+        st.altair_chart(rsi_chart, use_container_width=True)
 
-    # Use all or slice to limit to 50 items max
-    stock_tickers = list(company_dict.values())[:50]
-    crypto_ids = list(crypto_dict.values())[:50]
 
-    with st.spinner("Fetching stocks data..."):
-        stock_df = fetch_stock_data(stock_tickers)
 
-    with st.spinner("Fetching crypto data..."):
-        crypto_df = fetch_crypto_data(crypto_ids)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.subheader("📈 Stocks Summary")
-        st.dataframe(stock_df.style.format({
-            "Current Price": "${:,.2f}",
-            "RSI": "{:.2f}",
-            "SMA(20)": "${:,.2f}",
-            "EMA(20)": "${:,.2f}"
-        }))
-
-    with col2:
-        st.subheader("💰 Cryptocurrencies Summary")
-        st.dataframe(crypto_df.style.format({
-            "Current Price": "${:,.2f}",
-            "RSI": "{:.2f}",
-            "SMA(20)": "${:,.2f}",
-            "EMA(20)": "${:,.2f}"
-        }))

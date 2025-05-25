@@ -176,18 +176,24 @@ elif page == "₿ Crypto":
     st.title("₿ Real-Time Crypto Tracker (API Based)")
 
     crypto_dict = {
-        "Bitcoin (BTC)": "bitcoin",
-        "Ethereum (ETH)": "ethereum",
-        "Solana (SOL)": "solana",
-        "Ripple (XRP)": "ripple",
-        "Cardano (ADA)": "cardano"
-    }
+    "Bitcoin (BTC)": "bitcoin",
+    "Ethereum (ETH)": "ethereum",
+    "Tether (USDT)": "tether",
+    "BNB (BNB)": "binancecoin",
+    "Solana (SOL)": "solana",
+    "USD Coin (USDC)": "usd-coin",
+    "XRP (XRP)": "ripple",
+    "Dogecoin (DOGE)": "dogecoin",
+    "Cardano (ADA)": "cardano",
+    "Avalanche (AVAX)": "avalanche-2"
+}
 
     selected_cryptos = st.multiselect(
-        "🔍 Select cryptocurrencies to track:",
-        options=list(crypto_dict.keys()),
-        default=["Bitcoin (BTC)", "Ethereum (ETH)"]
-    )
+    "🔍 Select cryptocurrencies to track:",
+    options=list(crypto_dict.keys()),
+    default=list(crypto_dict.keys())  # ← this auto-selects top 10
+)
+
 
     capital = st.number_input("💰 Enter your crypto capital ($):", min_value=1, value=500)
 

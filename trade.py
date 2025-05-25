@@ -177,6 +177,8 @@ elif page == "Crypto":
 
 elif page == "Crypto":
     st.title("💰 Crypto Tracker")
+    if st.button("🔄 Refresh Data"):
+        st.rerun()
 
     crypto_dict = {
     "Bitcoin": "bitcoin",
@@ -190,7 +192,6 @@ elif page == "Crypto":
     "Litecoin": "litecoin",
     "Avalanche": "avalanche-2"
 }
-
 
     selected_coins = st.multiselect("🔍 Select cryptocurrencies to track:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys()))
 

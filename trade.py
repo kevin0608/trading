@@ -29,24 +29,28 @@ def calculate_macd(data, fast=12, slow=26, signal=9):
 
 def signal_generator(df):
     try:
+        print("Raw DataFrame tail:\n", df.tail())  # See the last few rows
+
         rsi = float(df['RSI'].dropna().iloc[-1])
         sma = float(df['SMA'].dropna().iloc[-1])
         ema = float(df['EMA'].dropna().iloc[-1])
         close = float(df['Close'].dropna().iloc[-1])
         macd = float(df['MACD'].dropna().iloc[-1])
         macd_signal = float(df['MACD Signal'].dropna().iloc[-1])
-    except (IndexError, KeyError, ValueError):
+        
+    except Exception as e:
+        print("Error:", e)
         return "Stop"
 
     print(f"RSI: {rsi}, SMA: {sma}, EMA: {ema}, Close: {close}, MACD: {macd}, MACD Signal: {macd_signal}")
 
-    # Only using RSI to test signal output
     if rsi < 60:
         return "Buy"
     elif rsi >= 60:
         return "Sell"
     else:
         return "Hold"
+
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"

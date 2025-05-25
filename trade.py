@@ -66,7 +66,7 @@ st.sidebar.title("Navigation")
 page = st.sidebar.selectbox("Go to", ["Stocks", "Crypto"])
 
 if page == "Stocks":
-    st.title("📈 Optimised Trading Assistant")
+    st.title("Stock Tracker")
     if st.button("🔄 Refresh Data"):
         st.rerun()
 
@@ -175,7 +175,7 @@ elif page == "Crypto":
         )
         st.altair_chart(price_chart, use_container_width=True)
 elif page == "Crypto":
-    st.title("💰 Crypto Tracker")
+    st.title("Crypto Tracker")
     if st.button("🔄 Refresh Data"):
         st.rerun()
 

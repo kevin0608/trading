@@ -31,21 +31,40 @@ def signal_generator(df):
     except (IndexError, KeyError, ValueError):
         return "Hold"
 
-    signal = "Hold"
+    score = 0
 
-    # Overbought/Oversold condition
-    if rsi < 30 and close > ema and macd > macd_signal:
-        signal = "Buy"
-    elif rsi > 70 and close < ema and macd < macd_signal:
-        signal = "Sell"
+    # RSI
+    if rsi < 40:
+        score += 1
+    elif rsi > 60:
+        score -= 1
 
-    # Trend confirmation: EMA > SMA with bullish MACD
-    elif close > ema > sma and macd > macd_signal:
-        signal = "Buy"
-    elif close < ema < sma and macd < macd_signal:
-        signal = "Sell"
+    # Price vs EMA
+    if close > ema:
+        score += 1
+    else:
+        score -= 1
 
-    return signal
+    # EMA vs SMA trend
+    if ema > sma:
+        score += 1
+    else:
+        score -= 1
+
+    # MACD bullish or bearish crossover
+    if macd > macd_signal:
+        score += 1
+    else:
+        score -= 1
+
+    # Generate signal based on score threshold
+    if score >= 3:
+        return "Buy"
+    elif score <= -3:
+        return "Sell"
+    else:
+        return "Hold"
+
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"

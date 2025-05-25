@@ -167,13 +167,32 @@ elif page == "Crypto":
     for coin_name in selected_coins:
         st.subheader(f"📊 Crypto: {coin_name}")
         coin_id = crypto_dict[coin_name]
-        df = get_crypto_data(coin_id, days=60)
 
-        if df.empty:
-            st.warning("⚠️ Error fetching data.")
+        # Fetch full historical data for long-term chart
+        full_df = get_crypto_data(coin_id, days="max")
+        if full_df.empty:
+            st.warning(f"⚠️ Error fetching full history data for {coin_name}.")
             continue
 
-        # Calculate indicators: SMA, EMA, RSI
+        # Show full historical price chart
+        full_price_chart = (
+            alt.Chart(full_df.reset_index())
+            .mark_line(color='blue')
+            .encode(
+                x='Date:T',
+                y='Close:Q'
+            )
+            .properties(title=f"{coin_name} Price History (Full)")
+        )
+        st.altair_chart(full_price_chart, use_container_width=True)
+
+        # Fetch recent 60 days data for indicators and signals
+        df = get_crypto_data(coin_id, days=60)
+        if df.empty:
+            st.warning(f"⚠️ Error fetching recent data for {coin_name}.")
+            continue
+
+        # Calculate indicators
         df['SMA'] = calculate_sma(df)
         df['EMA'] = calculate_ema(df)
         df['RSI'] = calculate_rsi(df)
@@ -183,7 +202,7 @@ elif page == "Crypto":
 
         current_price = float(df['Close'].dropna().iloc[-1])
 
-        # Display key metrics in columns
+        # Display metrics
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("💵 Current Price", f"${current_price:.2f}")
         col2.metric("📈 RSI", f"{df['RSI'].iloc[-1]:.2f}")
@@ -199,18 +218,18 @@ elif page == "Crypto":
         else:
             st.write("⏸ Hold – no action recommended.")
 
-        # Price chart with Close, SMA, EMA
+        # Price chart with Close, SMA, EMA for recent 60 days
         price_df = df.reset_index()
         price_chart = (
             alt.Chart(price_df)
             .transform_fold(['Close', 'SMA', 'EMA'], as_=['Type', 'Price'])
             .mark_line()
             .encode(x='Date:T', y='Price:Q', color='Type:N')
-            .properties(title=f"{coin_name} Close Price, SMA(20) & EMA(20)")
+            .properties(title=f"{coin_name} Close Price, SMA(20) & EMA(20) (Last 60 Days)")
         )
         st.altair_chart(price_chart, use_container_width=True)
 
-        # RSI chart with scale domain [0, 100]
+        # RSI chart for recent 60 days
         rsi_df = df.reset_index()
         rsi_chart = (
             alt.Chart(rsi_df)
@@ -222,5 +241,3 @@ elif page == "Crypto":
             .properties(title=f"{coin_name} RSI (14-day)")
         )
         st.altair_chart(rsi_chart, use_container_width=True)
-
-

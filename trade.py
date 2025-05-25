@@ -6,6 +6,7 @@ import altair as alt
 import requests
 
 # ----- Helper functions -----
+
 def calculate_rsi(data, window=14):
     delta = data['Close'].diff()
     gain = delta.where(delta > 0, 0).rolling(window=window).mean()
@@ -68,6 +69,32 @@ def safe_float_format(x):
         return f"{x:.2f}"
     except (ValueError, TypeError):
         return ""
+
+def calculate_macd(df):
+    exp1 = df['Close'].ewm(span=12, adjust=False).mean()
+    exp2 = df['Close'].ewm(span=26, adjust=False).mean()
+    macd = exp1 - exp2
+    signal = macd.ewm(span=9, adjust=False).mean()
+    return macd, signal
+
+def calculate_atr(df, window=14):
+    high_low = df['High'] - df['Low']
+    high_close = np.abs(df['High'] - df['Close'].shift())
+    low_close = np.abs(df['Low'] - df['Close'].shift())
+    tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+    atr = tr.rolling(window=window).mean()
+    return atr
+
+def calculate_bollinger_bands(df, window=20):
+    sma = df['Close'].rolling(window).mean()
+    std = df['Close'].rolling(window).std()
+    upper = sma + 2 * std
+    lower = sma - 2 * std
+    width = (upper - lower) / sma
+    return width
+
+
+
 
 # ----- Login Screen -----
 st.title("Login")
@@ -313,7 +340,6 @@ elif page == "Crypto":
 # Summary Page with both DataFrames
 elif page == "Summary":
     st.title("Summary: Stocks & Crypto Overview")
-    capital = st.number_input("💰 Enter your starting capital (£):", min_value=1, value=500)
 
     # Stocks summary dataframe
     selected_names = st.multiselect("🔍 Select companies for summary:", options=list(company_dict.keys()), default=list(company_dict.keys())[:50])
@@ -324,28 +350,47 @@ elif page == "Summary":
         data = yf.download(ticker, period="60d", interval="1d", progress=False)
         if data.empty:
             continue
+
         data['RSI'] = calculate_rsi(data)
         data['SMA'] = calculate_sma(data)
         data['EMA'] = calculate_ema(data)
+
+        # Additional indicators
+        data['Price Change %'] = data['Close'].pct_change(periods=1) * 100
+        data['MACD'], data['MACD Signal'] = calculate_macd(data)
+        data['BB Width'] = calculate_bollinger_bands(data)
+        trend = "Bullish" if data['EMA'].iloc[-1] > data['SMA'].iloc[-1] else "Bearish"
+
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
 
         stock_rows.append({
             "Ticker": ticker,
             "Current Price": current_price,
+            "Change (%)": data['Price Change %'].iloc[-1],
+            "Volume": data['Volume'].iloc[-1],
             "RSI": data['RSI'].iloc[-1],
             "SMA(20)": data['SMA'].iloc[-1],
             "EMA(20)": data['EMA'].iloc[-1],
-            "Signal": signal
+            "MACD": data['MACD'].iloc[-1],
+            "MACD Signal": data['MACD Signal'].iloc[-1],
+            "BB Width": data['BB Width'].iloc[-1],
+            "Signal": signal,
+            "Trend": trend
         })
     stock_df = pd.DataFrame(stock_rows)
 
     st.subheader("📈 Stocks Overview")
     st.dataframe(stock_df.style.format({
         "Current Price": safe_currency_format,
+        "Change (%)": "{:.2f}%".format,
+        "Volume": "{:,}".format,
         "RSI": safe_float_format,
         "SMA(20)": safe_currency_format,
         "EMA(20)": safe_currency_format,
+        "MACD": safe_float_format,
+        "MACD Signal": safe_float_format,
+        "BB Width": safe_float_format,
     }))
 
     # Crypto summary dataframe
@@ -357,27 +402,44 @@ elif page == "Summary":
         df = get_crypto_data(crypto_dict[coin_name], days=60)
         if df.empty:
             continue
+
         df['RSI'] = calculate_rsi(df)
         df['SMA'] = calculate_sma(df)
         df['EMA'] = calculate_ema(df)
+
+        df['Price Change %'] = df['Close'].pct_change(periods=1) * 100
+        df['MACD'], df['MACD Signal'] = calculate_macd(df)
+        df['BB Width'] = calculate_bollinger_bands(df)
+        trend = "Bullish" if df['EMA'].iloc[-1] > df['SMA'].iloc[-1] else "Bearish"
+
         signal = signal_generator(df)
         current_price = float(df['Close'].dropna().iloc[-1])
 
         crypto_rows.append({
             "Coin": coin_name,
             "Current Price": current_price,
+            "Change (%)": df['Price Change %'].iloc[-1],
+            "Volume": df['Volume'].iloc[-1],
             "RSI": df['RSI'].iloc[-1],
             "SMA(20)": df['SMA'].iloc[-1],
             "EMA(20)": df['EMA'].iloc[-1],
-            "Signal": signal
+            "MACD": df['MACD'].iloc[-1],
+            "MACD Signal": df['MACD Signal'].iloc[-1],
+            "BB Width": df['BB Width'].iloc[-1],
+            "Signal": signal,
+            "Trend": trend
         })
     crypto_df = pd.DataFrame(crypto_rows)
 
     st.subheader("🪙 Crypto Overview")
     st.dataframe(crypto_df.style.format({
         "Current Price": safe_currency_format,
+        "Change (%)": "{:.2f}%".format,
+        "Volume": "{:,}".format,
         "RSI": safe_float_format,
         "SMA(20)": safe_currency_format,
         "EMA(20)": safe_currency_format,
+        "MACD": safe_float_format,
+        "MACD Signal": safe_float_format,
+        "BB Width": safe_float_format,
     }))
-

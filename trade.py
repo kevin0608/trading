@@ -39,10 +39,7 @@ def signal_generator(df):
         macd_signal = float(df['MACD Signal'].dropna().iloc[-1])
         
     except Exception as e:
-        print("Error:", e)
-        return "Stop"
-
-    print(f"RSI: {rsi}, SMA: {sma}, EMA: {ema}, Close: {close}, MACD: {macd}, MACD Signal: {macd_signal}")
+        return "Error"
 
     if rsi < 60:
         return "Buy"

@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import altair as alt
 import requests
+import datetime
 
 # ----- Helper functions -----
 def calculate_rsi(data, window=14):
@@ -21,9 +22,8 @@ def calculate_ema(data, window=20):
     return data['Close'].ewm(span=window, adjust=False).mean()
 
 def signal_generator(df):
-    if df[['RSI', 'SMA', 'EMA', 'Close']].dropna().empty:
-        return "Hold"
     rsi = float(df['RSI'].dropna().iloc[-1])
+    sma = float(df['SMA'].dropna().iloc[-1])
     ema = float(df['EMA'].dropna().iloc[-1])
     close = float(df['Close'].dropna().iloc[-1])
 
@@ -34,31 +34,55 @@ def signal_generator(df):
     else:
         return "Hold"
 
-def calculate_pivots(df):
-    if len(df) < 2:
-        return (np.nan,) * 5
-    last_day = df.iloc[-2]
-    high = last_day['High']
-    low = last_day['Low']
-    close = last_day['Close']
+def calculate_daily_pivots(df):
+    pivots = []
+    r1s = []
+    s1s = []
+    r2s = []
+    s2s = []
 
-    pivot = (high + low + close) / 3
-    r1 = (2 * pivot) - low
-    s1 = (2 * pivot) - high
-    r2 = pivot + (high - low)
-    s2 = pivot - (high - low)
+    for i in range(len(df)):
+        if i == 0:
+            # No previous day data for first row, so use NaN
+            pivots.append(np.nan)
+            r1s.append(np.nan)
+            s1s.append(np.nan)
+            r2s.append(np.nan)
+            s2s.append(np.nan)
+        else:
+            prev = df.iloc[i-1]
+            high = prev['High']
+            low = prev['Low']
+            close = prev['Close']
 
-    return pivot, r1, s1, r2, s2
+            pivot = (high + low + close) / 3
+            r1 = (2 * pivot) - low
+            s1 = (2 * pivot) - high
+            r2 = pivot + (high - low)
+            s2 = pivot - (high - low)
+
+            pivots.append(pivot)
+            r1s.append(r1)
+            s1s.append(s1)
+            r2s.append(r2)
+            s2s.append(s2)
+
+    df['Pivot'] = pivots
+    df['R1'] = r1s
+    df['S1'] = s1s
+    df['R2'] = r2s
+    df['S2'] = s2s
+    return df
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
-    params = {"vs_currency": "usd", "days": days, "interval": "daily"}
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-    except Exception:
-        return pd.DataFrame()
+    params = {
+        "vs_currency": "usd",
+        "days": days,
+        "interval": "daily"
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
 
     if "prices" not in data:
         return pd.DataFrame()
@@ -70,16 +94,10 @@ def get_crypto_data(coin_id, days=60):
     df.drop("Timestamp", axis=1, inplace=True)
     return df
 
-@st.cache_data(ttl=3600)
-def get_stock_data(ticker):
-    data = yf.download(ticker, period="60d", interval="1d")
-    return data
-
 # ----- Login Screen -----
 st.title("Login")
 password = st.text_input("Enter password:", type="password")
 if password != "2121":
-    st.warning("Incorrect password.")
     st.stop()
 
 # Sidebar Page Selector
@@ -110,7 +128,7 @@ if page == "Stocks":
 
     for ticker in companies:
         st.subheader(f"📊 Stock: {ticker}")
-        data = get_stock_data(ticker)
+        data = yf.download(ticker, period="60d", interval="1d")
         if data.empty:
             st.warning("⚠️ Error fetching data.")
             continue
@@ -119,12 +137,14 @@ if page == "Stocks":
         data['SMA'] = calculate_sma(data)
         data['EMA'] = calculate_ema(data)
 
+        # Calculate daily pivot points
+        data = calculate_daily_pivots(data)
+
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
-        pivot, r1, s1, r2, s2 = calculate_pivots(data)
 
         col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric("💵 Current Price", f"£{current_price:.2f}")
+        col1.metric("💵 Current Price", f"${current_price:.2f}")
         col2.metric("📈 RSI", f"{data['RSI'].iloc[-1]:.2f}")
         col3.metric("📉 SMA(20)", f"£{data['SMA'].iloc[-1]:.2f}")
         col4.metric("⚡ EMA(20)", f"£{data['EMA'].iloc[-1]:.2f}")
@@ -160,11 +180,7 @@ if page == "Stocks":
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
 
-        # Prepare pivot DataFrame for plotting
-        pivot_df = data[['Close']].dropna().reset_index()
-        for level_name, level_value in zip(['Pivot', 'R1', 'S1', 'R2', 'S2'], [pivot, r1, s1, r2, s2]):
-            pivot_df[level_name] = level_value
-
+        pivot_df = data[['Close', 'Pivot', 'R1', 'S1', 'R2', 'S2']].dropna().reset_index()
         pivot_chart = (
             alt.Chart(pivot_df)
             .transform_fold(['Close', 'Pivot', 'R1', 'S1', 'R2', 'S2'], as_=['Level', 'Value'])
@@ -177,7 +193,6 @@ if page == "Stocks":
             .properties(title=f"{ticker} Close Price & Pivot Points")
         )
         st.altair_chart(pivot_chart, use_container_width=True)
-
 elif page == "Crypto":
     st.title("💰 Crypto Tracker")
 

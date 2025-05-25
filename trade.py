@@ -23,44 +23,12 @@ def calculate_ema(data, window=20):
 def signal_generator(df):
     try:
         rsi = float(df['RSI'].dropna().iloc[-1])
-        sma = float(df['SMA'].dropna().iloc[-1])
-        ema = float(df['EMA'].dropna().iloc[-1])
-        close = float(df['Close'].dropna().iloc[-1])
-        macd = float(df['MACD'].dropna().iloc[-1])
-        macd_signal = float(df['MACD Signal'].dropna().iloc[-1])
     except (IndexError, KeyError, ValueError):
         return "Hold"
 
-    score = 0
-
-    # RSI
-    if rsi < 40:
-        score += 1
-    elif rsi > 60:
-        score -= 1
-
-    # Price vs EMA
-    if close > ema:
-        score += 1
-    else:
-        score -= 1
-
-    # EMA vs SMA trend
-    if ema > sma:
-        score += 1
-    else:
-        score -= 1
-
-    # MACD bullish or bearish crossover
-    if macd > macd_signal:
-        score += 1
-    else:
-        score -= 1
-
-    # Generate signal based on score threshold
-    if score >= 3:
+    if rsi < 50:
         return "Buy"
-    elif score <= -3:
+    elif rsi > 50:
         return "Sell"
     else:
         return "Hold"

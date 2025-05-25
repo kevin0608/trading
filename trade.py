@@ -180,21 +180,28 @@ elif page == "Crypto":
     if st.button("🔄 Refresh Data"):
         st.rerun()
 
+    
     crypto_dict = {
-    "Bitcoin": "bitcoin",
-    "Ethereum": "ethereum",
-    "Binance Coin": "binancecoin",
-    "Cardano": "cardano",
-    "Dogecoin": "dogecoin",
-    "Solana": "solana",
-    "Polkadot": "polkadot",
-    "Ripple": "ripple",
-    "Litecoin": "litecoin",
-    "Avalanche": "avalanche-2"
-}
+        "Bitcoin": "bitcoin",
+        "Ethereum": "ethereum",
+        "Binance Coin": "binancecoin",
+        "Cardano": "cardano",
+        "Dogecoin": "dogecoin",
+        "Solana": "solana",
+        "Polkadot": "polkadot",
+        "Ripple": "ripple",
+        "Litecoin": "litecoin",
+        "Avalanche": "avalanche-2"
+    }
 
-    selected_coins = st.multiselect("🔍 Select cryptocurrencies to track:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys()))
+    selected_coins = st.multiselect(
+        "Select cryptos to track:",
+        options=list(crypto_dict.keys()),
+        default=list(crypto_dict.keys())
+    )
 
+    st.write("Selected cryptos:", selected_coins)
+    
     for coin_name in selected_coins:
         st.subheader(f"📊 Crypto: {coin_name}")
         coin_id = crypto_dict[coin_name]

@@ -33,46 +33,7 @@ def signal_generator(df):
         return "Sell"
     else:
         return "Hold"
-
-def calculate_daily_pivots(df):
-    pivots = []
-    r1s = []
-    s1s = []
-    r2s = []
-    s2s = []
-
-    for i in range(len(df)):
-        if i == 0:
-            # No previous day data for first row, so use NaN
-            pivots.append(np.nan)
-            r1s.append(np.nan)
-            s1s.append(np.nan)
-            r2s.append(np.nan)
-            s2s.append(np.nan)
-        else:
-            prev = df.iloc[i-1]
-            high = prev['High']
-            low = prev['Low']
-            close = prev['Close']
-
-            pivot = (high + low + close) / 3
-            r1 = (2 * pivot) - low
-            s1 = (2 * pivot) - high
-            r2 = pivot + (high - low)
-            s2 = pivot - (high - low)
-
-            pivots.append(pivot)
-            r1s.append(r1)
-            s1s.append(s1)
-            r2s.append(r2)
-            s2s.append(s2)
-
-    df['Pivot'] = pivots
-    df['R1'] = r1s
-    df['S1'] = s1s
-    df['R2'] = r2s
-    df['S2'] = s2s
-    return df
+    
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
@@ -107,7 +68,7 @@ page = st.sidebar.selectbox("Go to", ["Stocks", "Crypto"])
 if page == "Stocks":
     st.title("📈 Optimised Trading Assistant")
     if st.button("🔄 Refresh Data"):
-        st.experimental_rerun()
+        st.rerun()
 
     company_dict = {
         "Apple (AAPL)": "AAPL",
@@ -137,8 +98,6 @@ if page == "Stocks":
         data['SMA'] = calculate_sma(data)
         data['EMA'] = calculate_ema(data)
 
-        # Calculate daily pivot points
-        data = calculate_daily_pivots(data)
 
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
@@ -169,30 +128,6 @@ if page == "Stocks":
         )
         st.altair_chart(price_chart, use_container_width=True)
 
-        rsi_df = data[['RSI']].dropna().reset_index()
-        rsi_chart = (
-            alt.Chart(rsi_df)
-            .mark_line(color='orange')
-            .encode(x='Date:T', y='RSI:Q')
-            .properties(title=f"{ticker} RSI (14)").interactive()
-        )
-        threshold_30 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(30))
-        threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
-        st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
-
-        pivot_df = data[['Close', 'Pivot', 'R1', 'S1', 'R2', 'S2']].dropna().reset_index()
-        pivot_chart = (
-            alt.Chart(pivot_df)
-            .transform_fold(['Close', 'Pivot', 'R1', 'S1', 'R2', 'S2'], as_=['Level', 'Value'])
-            .mark_line()
-            .encode(
-                x='Date:T',
-                y='Value:Q',
-                color='Level:N'
-            )
-            .properties(title=f"{ticker} Close Price & Pivot Points")
-        )
-        st.altair_chart(pivot_chart, use_container_width=True)
 elif page == "Crypto":
     st.title("💰 Crypto Tracker")
 

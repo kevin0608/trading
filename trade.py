@@ -410,6 +410,7 @@ if page == "Stocks":
         data['RSI'] = calculate_rsi(data)
         data['SMA'] = calculate_sma(data)
         data['EMA'] = calculate_ema(data)
+        data['MACD'], data['MACD Signal'] = calculate_macd(data)
 
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
@@ -472,6 +473,8 @@ elif page == "Crypto":
         df['SMA'] = calculate_sma(df)
         df['EMA'] = calculate_ema(df)
         df['RSI'] = calculate_rsi(df)
+        df['MACD'], df['MACD Signal'] = calculate_macd(df)
+
 
         signal = signal_generator(df)
         current_price = float(df['Close'].dropna().iloc[-1])
@@ -536,6 +539,8 @@ elif page == "Summary":
         data['RSI'] = calculate_rsi(data)
         data['SMA'] = calculate_sma(data)
         data['EMA'] = calculate_ema(data)
+        data['MACD'], data['MACD Signal'] = calculate_macd(data)
+
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
 
@@ -567,6 +572,8 @@ elif page == "Summary":
         df['RSI'] = calculate_rsi(df)
         df['SMA'] = calculate_sma(df)
         df['EMA'] = calculate_ema(df)
+        df['MACD'], df['MACD Signal'] = calculate_macd(df)
+
         signal = signal_generator(df)
         current_price = float(df['Close'].dropna().iloc[-1])
 

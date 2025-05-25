@@ -38,6 +38,8 @@ def signal_generator(df):
     except (IndexError, KeyError, ValueError):
         return "Hold"
 
+    print(f"RSI: {rsi}, SMA: {sma}, EMA: {ema}, Close: {close}, MACD: {macd}, MACD Signal: {macd_signal}")
+
     score = 0
 
     # RSI with finer gradation and weight 2

@@ -39,9 +39,10 @@ def signal_generator(df):
     if (rsi < oversold) and (close > ema) and (close > sma) and (close > prev_close):
         return "Buy"
     
-    # Sell signal: RSI overbought, price below EMA & SMA (bearish trend), price decreasing today
-    elif (rsi > overbought) and (close < ema) and (close < sma) and (close < prev_close):
-
+    elif (rsi > overbought) and \
+     (close.iloc[-1] < ema.iloc[-1]) and \
+     (close.iloc[-1] < sma.iloc[-1]) and \
+     (close.iloc[-1] < prev_close.iloc[-1]):
         return "Sell"
     
     else:

@@ -30,16 +30,18 @@ def calculate_macd(data, fast=12, slow=26, signal=9):
 def signal_generator(df):
     try:
         rsi = float(df['RSI'].dropna().iloc[-1])
+        close = float(df['Close'].dropna().iloc[-1])
+        ema = float(df['EMA'].dropna().iloc[-1])
     except (IndexError, KeyError, ValueError):
         return "Hold"
 
-    if rsi < 50:
+    # RSI zones + EMA trend filter
+    if rsi < 35 and close > ema:
         return "Buy"
-    elif rsi > 50:
+    elif rsi > 65 and close < ema:
         return "Sell"
     else:
         return "Hold"
-
 
 
 def get_crypto_data(coin_id, days=60):

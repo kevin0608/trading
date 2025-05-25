@@ -39,7 +39,7 @@ def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
     params = {
         "vs_currency": "usd",
-        "days": days,
+        "days": str(days),  # Convert days to string to support 'max'
         "interval": "daily"
     }
     response = requests.get(url, params=params)
@@ -54,6 +54,7 @@ def get_crypto_data(coin_id, days=60):
     df.set_index("Date", inplace=True)
     df.drop("Timestamp", axis=1, inplace=True)
     return df
+
 
 # ----- Login Screen -----
 st.title("Login")

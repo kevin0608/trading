@@ -39,10 +39,11 @@ def signal_generator(df):
     if (rsi < oversold) and (close > ema) and (close > sma) and (close > prev_close):
         return "Buy"
     
-    elif (rsi > overbought) and \
-     (close.iloc[-1] < ema.iloc[-1]) and \
-     (close.iloc[-1] < sma.iloc[-1]) and \
-     (close.iloc[-1] < prev_close.iloc[-1]):
+    elif (rsi.iloc[-1] > overbought) and \
+     (close.iloc[-1] < ema) and \
+     (close.iloc[-1] < sma) and \
+     (close.iloc[-1] < prev_close):
+
         return "Sell"
     
     else:

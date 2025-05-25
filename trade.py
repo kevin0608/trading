@@ -23,12 +23,44 @@ def calculate_ema(data, window=20):
 def signal_generator(df):
     try:
         rsi = float(df['RSI'].dropna().iloc[-1])
+        sma = float(df['SMA'].dropna().iloc[-1])
+        ema = float(df['EMA'].dropna().iloc[-1])
+        close = float(df['Close'].dropna().iloc[-1])
+        macd = float(df['MACD'].dropna().iloc[-1])
+        macd_signal = float(df['MACD Signal'].dropna().iloc[-1])
     except (IndexError, KeyError, ValueError):
         return "Hold"
 
-    if rsi < 50:
+    score = 0
+
+    # RSI
+    if rsi < 40:
+        score += 1
+    elif rsi > 60:
+        score -= 1
+
+    # Price vs EMA
+    if close > ema:
+        score += 1
+    else:
+        score -= 1
+
+    # EMA vs SMA trend
+    if ema > sma:
+        score += 1
+    else:
+        score -= 1
+
+    # MACD bullish or bearish crossover
+    if macd > macd_signal:
+        score += 1
+    else:
+        score -= 1
+
+    # Generate signal based on score threshold
+    if score >= 3:
         return "Buy"
-    elif rsi > 50:
+    elif score <= -3:
         return "Sell"
     else:
         return "Hold"
@@ -231,7 +263,6 @@ company_dict = {
     "DocuSign (DOCU)": "DOCU",
     "CrowdStrike (CRWD)": "CRWD",
     
-    # Add more to get near 200 companies...
 }
 
 # Expanded Crypto Dictionary (50 popular cryptocurrencies)
@@ -411,10 +442,11 @@ elif page == "Crypto":
         )
         st.altair_chart(rsi_chart, use_container_width=True)
 
-# Summary Page with both DataFrames
+# Summary Page with Signal Summary and Detailed DataFrames
 elif page == "Summary":
     st.title("Summary: Stocks & Crypto Overview")
 
+    # --- Select Companies ---
     with st.expander("🔍 Select companies for summary (click to expand)"):
         selected_names = st.multiselect(
             "Select companies:",
@@ -423,6 +455,7 @@ elif page == "Summary":
         )
     companies = [company_dict[name] for name in selected_names]
 
+    ticker_to_name = {v: k for k, v in company_dict.items()}  # Map tickers to names once
 
     stock_rows = []
     for ticker in companies:
@@ -435,11 +468,9 @@ elif page == "Summary":
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
 
-        ticker_to_name = {v: k for k, v in company_dict.items()}
-
         stock_rows.append({
             "Ticker": ticker,
-            "Company": ticker_to_name.get(ticker, "Unknown"),  # Add company name here
+            "Company": ticker_to_name.get(ticker, "Unknown"),
             "Current Price": current_price,
             "RSI": data['RSI'].iloc[-1],
             "SMA(20)": data['SMA'].iloc[-1],
@@ -448,14 +479,7 @@ elif page == "Summary":
         })
     stock_df = pd.DataFrame(stock_rows)
 
-    st.subheader("📈 Stocks Overview")
-    st.dataframe(stock_df.style.format({
-        "Current Price": safe_currency_format,
-        "RSI": safe_float_format,
-        "SMA(20)": safe_currency_format,
-        "EMA(20)": safe_currency_format,
-    }))
-
+    # --- Select Cryptocurrencies ---
     with st.expander("🔍 Select cryptocurrencies for summary (click to expand)"):
         selected_coins = st.multiselect(
             "Select cryptocurrencies:",
@@ -485,11 +509,38 @@ elif page == "Summary":
         })
     crypto_df = pd.DataFrame(crypto_rows)
 
-    st.subheader("🪙 Crypto Overview")
-    st.dataframe(crypto_df.style.format({
-        "Current Price": safe_currency_format,
-        "RSI": safe_float_format,
-        "SMA(20)": safe_currency_format,
-        "EMA(20)": safe_currency_format,
-    }))
+    # --- Signal Summary ---
+    st.subheader("🔔 Signal Summary")
 
+    stock_signal_counts = stock_df['Signal'].value_counts() if not stock_df.empty else {}
+    crypto_signal_counts = crypto_df['Signal'].value_counts() if not crypto_df.empty else {}
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Stocks Signals**")
+        for signal in ["Buy", "Hold", "Sell"]:
+            count = stock_signal_counts.get(signal, 0)
+            st.write(f"{signal}: {count}")
+
+    with col2:
+        st.markdown("**Crypto Signals**")
+        for signal in ["Buy", "Hold", "Sell"]:
+            count = crypto_signal_counts.get(signal, 0)
+            st.write(f"{signal}: {count}")
+
+    # --- Detailed DataFrames inside expanders ---
+    with st.expander("📈 Stocks Overview (detailed)"):
+        st.dataframe(stock_df.style.format({
+            "Current Price": safe_currency_format,
+            "RSI": safe_float_format,
+            "SMA(20)": safe_currency_format,
+            "EMA(20)": safe_currency_format,
+        }))
+
+    with st.expander("🪙 Crypto Overview (detailed)"):
+        st.dataframe(crypto_df.style.format({
+            "Current Price": safe_currency_format,
+            "RSI": safe_float_format,
+            "SMA(20)": safe_currency_format,
+            "EMA(20)": safe_currency_format,
+        }))

@@ -3,12 +3,14 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import altair as alt
+import requests
+import datetime
 
 # ----- Helper functions -----
 def calculate_rsi(data, window=14):
     delta = data['Close'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+    gain = delta.where(delta > 0, 0).rolling(window=window).mean()
+    loss = -delta.where(delta < 0, 0).rolling(window=window).mean()
     rs = gain / loss
     rsi = 100 - (100 / (1 + rs))
     return rsi
@@ -32,9 +34,19 @@ def signal_generator(df):
     else:
         return "Hold"
 
-#----------------------------------------- Crypto ------------------------------
-import requests
-import datetime
+def calculate_pivots(df):
+    last_day = df.iloc[-2]
+    high = last_day['High']
+    low = last_day['Low']
+    close = last_day['Close']
+
+    pivot = (high + low + close) / 3
+    r1 = (2 * pivot) - low
+    s1 = (2 * pivot) - high
+    r2 = pivot + (high - low)
+    s2 = pivot - (high - low)
+
+    return pivot, r1, s1, r2, s2
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
@@ -58,20 +70,16 @@ def get_crypto_data(coin_id, days=60):
 
 # ----- Login Screen -----
 st.title("🔐 Login")
-
 password = st.text_input("Enter password:", type="password")
-
 if password != "123":
-    st.stop()  # Stop execution here if password is wrong
+    st.stop()
 
 # Sidebar Page Selector
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox("Go to", ["📈 Stocks", "₿ Crypto"])
 
 if page == "📈 Stocks":
-    # ----- Main App -----
     st.title("📈 Optimised Trading Assistant")
-
     if st.button("🔄 Refresh Data"):
         st.rerun()
 
@@ -88,35 +96,12 @@ if page == "📈 Stocks":
         "PayPal (PYPL)": "PYPL"
     }
 
-    selected_names = st.multiselect(
-        "🔍 Select companies to track:",
-        options=list(company_dict.keys()),
-        default=list(company_dict.keys())
-    )
-
+    selected_names = st.multiselect("🔍 Select companies to track:", options=list(company_dict.keys()), default=list(company_dict.keys()))
     companies = [company_dict[name] for name in selected_names]
-
     capital = st.number_input("💰 Enter your starting capital (£):", min_value=1, value=500)
-
-    results = {}
-
-    def calculate_pivots(df):
-        last_day = df.iloc[-2]
-        high = last_day['High']
-        low = last_day['Low']
-        close = last_day['Close']
-
-        pivot = (high + low + close) / 3
-        r1 = (2 * pivot) - low
-        s1 = (2 * pivot) - high
-        r2 = pivot + (high - low)
-        s2 = pivot - (high - low)
-
-        return pivot, r1, s1, r2, s2
 
     for ticker in companies:
         st.subheader(f"📊 Stock: {ticker}")
-
         data = yf.download(ticker, period="60d", interval="1d")
         if data.empty:
             st.warning("⚠️ Error fetching data.")
@@ -128,7 +113,6 @@ if page == "📈 Stocks":
 
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
-
         pivot, r1, s1, r2, s2 = calculate_pivots(data)
 
         col1, col2, col3, col4, col5 = st.columns(5)
@@ -147,25 +131,13 @@ if page == "📈 Stocks":
         else:
             st.write("⏸ Hold – no action recommended.")
 
-        results[ticker] = {
-            "price": current_price,
-            "signal": signal,
-            "position_size": position_size if signal == "Buy" else 0
-        }
-
         price_df = data[['Close', 'SMA', 'EMA']].dropna().reset_index()
         price_chart = (
             alt.Chart(price_df)
             .transform_fold(['Close', 'SMA', 'EMA'], as_=['Type', 'Price'])
             .mark_line()
-            .encode(
-                x='Date:T',
-                y='Price:Q',
-                color='Type:N'
-            )
-            .properties(
-                title=f"{ticker} Close Price, SMA(20) & EMA(20)"
-            )
+            .encode(x='Date:T', y='Price:Q', color='Type:N')
+            .properties(title=f"{ticker} Close Price, SMA(20) & EMA(20)")
         )
         st.altair_chart(price_chart, use_container_width=True)
 
@@ -173,19 +145,11 @@ if page == "📈 Stocks":
         rsi_chart = (
             alt.Chart(rsi_df)
             .mark_line(color='orange')
-            .encode(
-                x='Date:T',
-                y='RSI:Q'
-            )
-            .properties(
-                title=f"{ticker} RSI (14)"
-            )
-            .interactive()
+            .encode(x='Date:T', y='RSI:Q')
+            .properties(title=f"{ticker} RSI (14)").interactive()
         )
-
         threshold_30 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(30))
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
-
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
 
         pivot_df = data[['Close']].dropna().reset_index()
@@ -194,46 +158,32 @@ if page == "📈 Stocks":
         pivot_df['S1'] = s1
         pivot_df['R2'] = r2
         pivot_df['S2'] = s2
-
         pivot_chart = (
             alt.Chart(pivot_df)
             .transform_fold(['Close', 'Pivot', 'R1', 'S1', 'R2', 'S2'], as_=['Level', 'Value'])
             .mark_line()
-            .encode(
-                x='Date:T',
-                y='Value:Q',
-                color='Level:N'
-            )
-            .properties(
-                title=f"{ticker} Close Price & Pivot Points"
-            )
+            .encode(x='Date:T', y='Value:Q', color='Level:N')
+            .properties(title=f"{ticker} Close Price & Pivot Points")
         )
-
         st.altair_chart(pivot_chart, use_container_width=True)
-    #-----------------------------------------------------------------------------------------------------------------------
+
 elif page == "₿ Crypto":
     st.title("₿ Real-Time Crypto Tracker (API Based)")
 
     crypto_dict = {
-    "Bitcoin (BTC)": "bitcoin",
-    "Ethereum (ETH)": "ethereum",
-    "Tether (USDT)": "tether",
-    "BNB (BNB)": "binancecoin",
-    "Solana (SOL)": "solana",
-    "USD Coin (USDC)": "usd-coin",
-    "XRP (XRP)": "ripple",
-    "Dogecoin (DOGE)": "dogecoin",
-    "Cardano (ADA)": "cardano",
-    "Avalanche (AVAX)": "avalanche-2"
-}
+        "Bitcoin (BTC)": "bitcoin",
+        "Ethereum (ETH)": "ethereum",
+        "Tether (USDT)": "tether",
+        "BNB (BNB)": "binancecoin",
+        "Solana (SOL)": "solana",
+        "USD Coin (USDC)": "usd-coin",
+        "XRP (XRP)": "ripple",
+        "Dogecoin (DOGE)": "dogecoin",
+        "Cardano (ADA)": "cardano",
+        "Avalanche (AVAX)": "avalanche-2"
+    }
 
-    selected_cryptos = st.multiselect(
-    "🔍 Select cryptocurrencies to track:",
-    options=list(crypto_dict.keys()),
-    default=list(crypto_dict.keys())  # ← this auto-selects top 10
-)
-
-
+    selected_cryptos = st.multiselect("🔍 Select cryptocurrencies to track:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys()))
     capital = st.number_input("💰 Enter your crypto capital ($):", min_value=1, value=500)
 
     for name in selected_cryptos:
@@ -273,11 +223,7 @@ elif page == "₿ Crypto":
             alt.Chart(price_df)
             .transform_fold(['Close', 'SMA', 'EMA'], as_=['Type', 'Price'])
             .mark_line()
-            .encode(
-                x='Date:T',
-                y='Price:Q',
-                color='Type:N'
-            )
+            .encode(x='Date:T', y='Price:Q', color='Type:N')
             .properties(title=f"{name} Price & Indicators")
         )
         st.altair_chart(chart, use_container_width=True)

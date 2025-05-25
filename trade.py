@@ -38,31 +38,15 @@ def signal_generator(df):
     except (IndexError, KeyError, ValueError):
         return "Hold"
 
-    score = 0
+    print(f"RSI: {rsi}, SMA: {sma}, EMA: {ema}, Close: {close}, MACD: {macd}, MACD Signal: {macd_signal}")
 
-    # Ultra-loose RSI thresholds
-    if rsi < 40:
-        score += 1
-    elif rsi > 60:
-        score += 0  # Don't subtract, just avoid adding
-
-    if close > ema:
-        score += 1
-
-    if ema > sma:
-        score += 1
-
-    if macd > macd_signal:
-        score += 1
-
-    # Forcing logic to show Buy/Sell easier
-    if score >= 1:
+    # Only using RSI to test signal output
+    if rsi < 60:
         return "Buy"
-    elif score == 0 and rsi > 60:
+    elif rsi >= 60:
         return "Sell"
     else:
         return "Hold"
-
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"

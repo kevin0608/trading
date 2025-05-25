@@ -100,6 +100,20 @@ if page == "📈 Stocks":
 
     results = {}
 
+    def calculate_pivots(df):
+        last_day = df.iloc[-2]
+        high = last_day['High']
+        low = last_day['Low']
+        close = last_day['Close']
+
+        pivot = (high + low + close) / 3
+        r1 = (2 * pivot) - low
+        s1 = (2 * pivot) - high
+        r2 = pivot + (high - low)
+        s2 = pivot - (high - low)
+
+        return pivot, r1, s1, r2, s2
+
     for ticker in companies:
         st.subheader(f"📊 Stock: {ticker}")
 
@@ -115,8 +129,10 @@ if page == "📈 Stocks":
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
 
+        pivot, r1, s1, r2, s2 = calculate_pivots(data)
+
         col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric("💵 Current Price", f"£{current_price:.2f}")
+        col1.metric("💵 Current Price", f"${current_price:.2f}")
         col2.metric("📈 RSI", f"{data['RSI'].iloc[-1]:.2f}")
         col3.metric("📉 SMA(20)", f"£{data['SMA'].iloc[-1]:.2f}")
         col4.metric("⚡ EMA(20)", f"£{data['EMA'].iloc[-1]:.2f}")
@@ -125,7 +141,7 @@ if page == "📈 Stocks":
         if signal == "Buy":
             position_size = capital * 0.25
             quantity = position_size / current_price
-            st.info(f"🛒 Suggested Buy: £{position_size:.2f} (~{quantity:.2f} shares)")
+            st.info(f"🛍 Suggested Buy: £{position_size:.2f} (~{quantity:.2f} shares)")
         elif signal == "Sell":
             st.warning("📤 Consider selling your position.")
         else:
@@ -171,6 +187,29 @@ if page == "📈 Stocks":
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
 
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
+
+        pivot_df = data[['Close']].dropna().reset_index()
+        pivot_df['Pivot'] = pivot
+        pivot_df['R1'] = r1
+        pivot_df['S1'] = s1
+        pivot_df['R2'] = r2
+        pivot_df['S2'] = s2
+
+        pivot_chart = (
+            alt.Chart(pivot_df)
+            .transform_fold(['Close', 'Pivot', 'R1', 'S1', 'R2', 'S2'], as_=['Level', 'Value'])
+            .mark_line()
+            .encode(
+                x='Date:T',
+                y='Value:Q',
+                color='Level:N'
+            )
+            .properties(
+                title=f"{ticker} Close Price & Pivot Points"
+            )
+        )
+
+        st.altair_chart(pivot_chart, use_container_width=True)
     #-----------------------------------------------------------------------------------------------------------------------
 elif page == "₿ Crypto":
     st.title("₿ Real-Time Crypto Tracker (API Based)")

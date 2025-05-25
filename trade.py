@@ -90,8 +90,8 @@ if password != "2121":
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox("Go to", ["Stocks", "Crypto", "Summary"])
 
-# Expanded Company Dictionary (50 popular stocks)
 company_dict = {
+    # Tech & IT
     "Apple (AAPL)": "AAPL",
     "Tesla (TSLA)": "TSLA",
     "Microsoft (MSFT)": "MSFT",
@@ -103,45 +103,148 @@ company_dict = {
     "AMD (AMD)": "AMD",
     "PayPal (PYPL)": "PYPL",
     "Visa (V)": "V",
-    "JPMorgan Chase (JPM)": "JPM",
-    "Johnson & Johnson (JNJ)": "JNJ",
-    "Walmart (WMT)": "WMT",
-    "Procter & Gamble (PG)": "PG",
     "Mastercard (MA)": "MA",
-    "Disney (DIS)": "DIS",
     "Intel (INTC)": "INTC",
-    "Coca-Cola (KO)": "KO",
-    "PepsiCo (PEP)": "PEP",
-    "ExxonMobil (XOM)": "XOM",
-    "Berkshire Hathaway (BRK-B)": "BRK-B",
-    "Chevron (CVX)": "CVX",
-    "McDonald's (MCD)": "MCD",
-    "AbbVie (ABBV)": "ABBV",
     "Salesforce (CRM)": "CRM",
     "Adobe (ADBE)": "ADBE",
     "Oracle (ORCL)": "ORCL",
     "Cisco (CSCO)": "CSCO",
-    "Toyota (TM)": "TM",
-    "IBM (IBM)": "IBM",
     "Qualcomm (QCOM)": "QCOM",
+    "IBM (IBM)": "IBM",
+    "Snap (SNAP)": "SNAP",
+    "eBay (EBAY)": "EBAY",
+    "Twitter (TWTR)": "TWTR",
+    "Zoom (ZM)": "ZM",
+    "Shopify (SHOP)": "SHOP",
+    "Snowflake (SNOW)": "SNOW",
+    "Palantir (PLTR)": "PLTR",
+    "Dropbox (DBX)": "DBX",
+    
+    # Consumer Goods
+    "Coca-Cola (KO)": "KO",
+    "PepsiCo (PEP)": "PEP",
+    "Procter & Gamble (PG)": "PG",
+    "McDonald's (MCD)": "MCD",
     "Nike (NKE)": "NKE",
     "Starbucks (SBUX)": "SBUX",
     "Costco (COST)": "COST",
-    "Paychex (PAYX)": "PAYX",
-    "Ford (F)": "F",
-    "General Motors (GM)": "GM",
-    "Lockheed Martin (LMT)": "LMT",
-    "Honeywell (HON)": "HON",
-    "3M (MMM)": "MMM",
-    "Delta Air Lines (DAL)": "DAL",
-    "Boeing (BA)": "BA",
+    "Colgate-Palmolive (CL)": "CL",
+    "Mondelez (MDLZ)": "MDLZ",
+    "Kraft Heinz (KHC)": "KHC",
+    "General Mills (GIS)": "GIS",
+    "L'Oreal (OR)": "OR",
+    "Unilever (UL)": "UL",
+    "Nestle (NSRGY)": "NSRGY",
+    "Kimberly-Clark (KMB)": "KMB",
+    "Estee Lauder (EL)": "EL",
+    
+    # Finance & Banks
+    "JPMorgan Chase (JPM)": "JPM",
     "Goldman Sachs (GS)": "GS",
     "Morgan Stanley (MS)": "MS",
+    "Bank of America (BAC)": "BAC",
+    "Citigroup (C)": "C",
+    "Wells Fargo (WFC)": "WFC",
     "American Express (AXP)": "AXP",
+    "Visa (V)": "V",
+    "Mastercard (MA)": "MA",
+    "Charles Schwab (SCHW)": "SCHW",
+    
+    # Healthcare & Pharma
+    "Johnson & Johnson (JNJ)": "JNJ",
+    "AbbVie (ABBV)": "ABBV",
+    "Pfizer (PFE)": "PFE",
+    "Merck (MRK)": "MRK",
+    "Moderna (MRNA)": "MRNA",
+    "Gilead Sciences (GILD)": "GILD",
+    "Bristol-Myers Squibb (BMY)": "BMY",
+    "Eli Lilly (LLY)": "LLY",
+    "Amgen (AMGN)": "AMGN",
+    "Biogen (BIIB)": "BIIB",
+    
+    # Energy & Industrials
+    "ExxonMobil (XOM)": "XOM",
+    "Chevron (CVX)": "CVX",
+    "ConocoPhillips (COP)": "COP",
+    "Schlumberger (SLB)": "SLB",
+    "Boeing (BA)": "BA",
+    "Caterpillar (CAT)": "CAT",
+    "3M (MMM)": "MMM",
+    "Honeywell (HON)": "HON",
+    "General Electric (GE)": "GE",
+    "Lockheed Martin (LMT)": "LMT",
+    "Raytheon (RTX)": "RTX",
+    "FedEx (FDX)": "FDX",
+    "United Parcel Service (UPS)": "UPS",
+    
+    # Telecom
     "Verizon (VZ)": "VZ",
     "AT&T (T)": "T",
+    "T-Mobile (TMUS)": "TMUS",
+    
+    # Retail
+    "Walmart (WMT)": "WMT",
+    "Target (TGT)": "TGT",
+    "Lowe's (LOW)": "LOW",
+    "Home Depot (HD)": "HD",
+    "Dollar General (DG)": "DG",
+    
+    # Automotive
+    "Ford (F)": "F",
+    "General Motors (GM)": "GM",
+    "Toyota (TM)": "TM",
+    "Honda (HMC)": "HMC",
+    "Tesla (TSLA)": "TSLA",
+    
+    # Others & Misc
+    "Disney (DIS)": "DIS",
+    "Booking Holdings (BKNG)": "BKNG",
+    "Airbnb (ABNB)": "ABNB",
+    "Uber (UBER)": "UBER",
+    "Lyft (LYFT)": "LYFT",
+    "Netflix (NFLX)": "NFLX",
+    "Spotify (SPOT)": "SPOT",
+    "Zoom Video (ZM)": "ZM",
+    "Slack (WORK)": "WORK",
+    "Intel (INTC)": "INTC",
+    
+    # International Large Caps
+    "Samsung (005930.KS)": "005930.KS",
+    "Alibaba (BABA)": "BABA",
+    "BHP Group (BHP)": "BHP",
+    "Toyota (TM)": "TM",
+    "Shell (SHEL)": "SHEL",
+    "Siemens (SIE.DE)": "SIE.DE",
+    "Nestle (NSRGY)": "NSRGY",
+    "Novartis (NVS)": "NVS",
+    "Roche (RHHBY)": "RHHBY",
+    "Sony (SONY)": "SONY",
+    
+    # Additional Popular US Stocks
+    "Twitter (TWTR)": "TWTR",
+    "Square (SQ)": "SQ",
+    "Intel (INTC)": "INTC",
+    "Dropbox (DBX)": "DBX",
     "eBay (EBAY)": "EBAY",
-    "Snap (SNAP)": "SNAP"
+    "Zillow (Z)": "Z",
+    "Peloton (PTON)": "PTON",
+    "Wayfair (W)": "W",
+    "Xilinx (XLNX)": "XLNX",
+    "Western Digital (WDC)": "WDC",
+    
+    # More Big Names
+    "Twitter (TWTR)": "TWTR",
+    "Facebook (META)": "META",
+    "Zoom Video (ZM)": "ZM",
+    "Slack (WORK)": "WORK",
+    "Pinterest (PINS)": "PINS",
+    "Square (SQ)": "SQ",
+    "Shopify (SHOP)": "SHOP",
+    "Atlassian (TEAM)": "TEAM",
+    "DocuSign (DOCU)": "DOCU",
+    "CrowdStrike (CRWD)": "CRWD",
+    
+    # Add more to get near 200 companies...
 }
 
 # Expanded Crypto Dictionary (50 popular cryptocurrencies)
@@ -340,8 +443,11 @@ elif page == "Summary":
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
 
+        ticker_to_name = {v: k for k, v in company_dict.items()}
+
         stock_rows.append({
             "Ticker": ticker,
+            "Company": ticker_to_name.get(ticker, "Unknown"),  # Add company name here
             "Current Price": current_price,
             "RSI": data['RSI'].iloc[-1],
             "SMA(20)": data['SMA'].iloc[-1],

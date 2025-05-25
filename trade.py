@@ -36,7 +36,7 @@ def signal_generator(df):
         macd = float(df['MACD'].dropna().iloc[-1])
         macd_signal = float(df['MACD Signal'].dropna().iloc[-1])
     except (IndexError, KeyError, ValueError):
-        return "Hold"
+        return "Stop"
 
     print(f"RSI: {rsi}, SMA: {sma}, EMA: {ema}, Close: {close}, MACD: {macd}, MACD Signal: {macd_signal}")
 

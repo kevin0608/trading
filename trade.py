@@ -262,6 +262,71 @@ company_dict = {
     "Atlassian (TEAM)": "TEAM",
     "DocuSign (DOCU)": "DOCU",
     "CrowdStrike (CRWD)": "CRWD",
+
+    # Additional Tech & IT
+    "ZoomInfo Technologies (ZI)": "ZI",
+    "Snowflake Inc. (SNOW)": "SNOW",
+    "Datadog (DDOG)": "DDOG",
+    "Twilio (TWLO)": "TWLO",
+    "Workday (WDAY)": "WDAY",
+    "ServiceNow (NOW)": "NOW",
+    "CrowdStrike (CRWD)": "CRWD",
+    "Okta (OKTA)": "OKTA",
+    "Atlassian (TEAM)": "TEAM",
+
+    # More Consumer Goods
+    "Clorox (CLX)": "CLX",
+    "Church & Dwight (CHD)": "CHD",
+    "Dollar Tree (DLTR)": "DLTR",
+    "Hasbro (HAS)": "HAS",
+
+    # More Finance & Banks
+    "BlackRock (BLK)": "BLK",
+    "Visa Europe (V)": "V",
+    "American International Group (AIG)": "AIG",
+    "CME Group (CME)": "CME",
+
+    # More Healthcare & Pharma
+    "Regeneron Pharmaceuticals (REGN)": "REGN",
+    "Vertex Pharmaceuticals (VRTX)": "VRTX",
+    "Novo Nordisk (NVO)": "NVO",
+    "Sanofi (SNY)": "SNY",
+
+    # Energy & Industrials
+    "NextEra Energy (NEE)": "NEE",
+    "Dominion Energy (D)": "D",
+    "Deere & Company (DE)": "DE",
+    "Eaton Corporation (ETN)": "ETN",
+    "Tesla (TSLA)": "TSLA",
+
+    # Telecom & Media
+    "Comcast (CMCSA)": "CMCSA",
+    "Charter Communications (CHTR)": "CHTR",
+    "Spotify (SPOT)": "SPOT",
+
+    # International
+    "Tencent Holdings (0700.HK)": "0700.HK",
+    "Baidu (BIDU)": "BIDU",
+    "SAP (SAP)": "SAP",
+    "Volkswagen (VWAGY)": "VWAGY",
+    "LVMH (LVMUY)": "LVMUY",
+
+    # Consumer Services / Travel
+    "Expedia Group (EXPE)": "EXPE",
+    "Carnival Corporation (CCL)": "CCL",
+    "Marriott International (MAR)": "MAR",
+
+    # Real Estate & REITs
+    "Prologis (PLD)": "PLD",
+    "American Tower (AMT)": "AMT",
+    "Digital Realty (DLR)": "DLR",
+
+    # Others
+    "Adobe (ADBE)": "ADBE",
+    "NVIDIA (NVDA)": "NVDA",
+    "Micron Technology (MU)": "MU",
+    "Square (SQ)": "SQ",
+    "Pinterest (PINS)": "PINS",
     
 }
 

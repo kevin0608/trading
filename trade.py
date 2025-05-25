@@ -5,6 +5,8 @@ import numpy as np
 import altair as alt
 import requests
 import datetime
+import time
+import requests
 
 # ----- Helper functions -----
 def calculate_rsi(data, window=14):
@@ -33,27 +35,36 @@ def signal_generator(df):
         return "Sell"
     else:
         return "Hold"
-    
 
-def get_crypto_data(coin_id, days=60):
+def get_crypto_data(coin_id, days=60, max_retries=5):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
     params = {
         "vs_currency": "usd",
-        "days": days,
+        "days": str(days),
         "interval": "daily"
     }
-    response = requests.get(url, params=params)
-    data = response.json()
 
-    if "prices" not in data:
-        return pd.DataFrame()
+    for attempt in range(max_retries):
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "prices" in data:
+                prices = data["prices"]
+                df = pd.DataFrame(prices, columns=["Timestamp", "Close"])
+                df["Date"] = pd.to_datetime(df["Timestamp"], unit="ms")
+                df.set_index("Date", inplace=True)
+                df.drop("Timestamp", axis=1, inplace=True)
+                return df
+            else:
+                # Sometimes the response is incomplete, retry
+                time.sleep(2 ** attempt)  # exponential backoff
+        else:
+            # If API rate-limited or server error
+            time.sleep(2 ** attempt)
 
-    prices = data["prices"]
-    df = pd.DataFrame(prices, columns=["Timestamp", "Close"])
-    df["Date"] = pd.to_datetime(df["Timestamp"], unit="ms")
-    df.set_index("Date", inplace=True)
-    df.drop("Timestamp", axis=1, inplace=True)
-    return df
+    # After max retries, return empty DataFrame or raise error
+    return pd.DataFrame()
+
 
 # ----- Login Screen -----
 st.title("Login")

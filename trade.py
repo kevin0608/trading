@@ -42,41 +42,35 @@ def signal_generator(df):
 
     score = 0
 
-    # RSI with finer gradation and weight 2
-    if rsi < 30:
-        score += 3
-    elif rsi < 40:
+    # Loosened RSI thresholds
+    if rsi < 25:
         score += 1
-    elif rsi > 70:
-        score -= 3
-    elif rsi > 60:
+    elif rsi > 75:
         score -= 1
 
-    # Price vs EMA weight 1
     if close > ema:
         score += 1
     else:
         score -= 1
 
-    # EMA vs SMA weight 1
     if ema > sma:
         score += 1
     else:
         score -= 1
 
-    # MACD crossover weight 2
     if macd > macd_signal:
-        score += 2
+        score += 1
     else:
-        score -= 2
+        score -= 1
 
-    # Signal thresholds
-    if score >= 3:
+    # Loosened scoring threshold
+    if score >= 1:
         return "Buy"
-    elif score <= -3:
+    elif score <= -1:
         return "Sell"
     else:
         return "Hold"
+
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"

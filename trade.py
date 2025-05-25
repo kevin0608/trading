@@ -153,11 +153,12 @@ if page == "📈 Stocks":
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
 
         pivot_df = data[['Close']].dropna().reset_index()
-        pivot_df['Pivot'] = pivot
-        pivot_df['R1'] = r1
-        pivot_df['S1'] = s1
-        pivot_df['R2'] = r2
-        pivot_df['S2'] = s2
+        pivot_df['Pivot'] = [pivot] * len(pivot_df)
+        pivot_df['R1'] = [r1] * len(pivot_df)
+        pivot_df['S1'] = [s1] * len(pivot_df)
+        pivot_df['R2'] = [r2] * len(pivot_df)
+        pivot_df['S2'] = [s2] * len(pivot_df)
+
         pivot_chart = (
             alt.Chart(pivot_df)
             .transform_fold(['Close', 'Pivot', 'R1', 'S1', 'R2', 'S2'], as_=['Level', 'Value'])

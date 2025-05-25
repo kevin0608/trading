@@ -106,6 +106,9 @@ if page == "Stocks":
     companies = [company_dict[name] for name in selected_names]
     capital = st.number_input("💰 Enter your starting capital (£):", min_value=1, value=500)
 
+    # List to hold summary info dicts
+    summary_data = []
+
     for ticker in companies:
         st.subheader(f"📊 Stock: {ticker}")
         data = yf.download(ticker, period="60d", interval="1d")
@@ -157,6 +160,27 @@ if page == "Stocks":
         threshold_30 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(30))
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
+
+        # Append summary info for this ticker
+        summary_data.append({
+            "Ticker": ticker,
+            "Current Price (£)": current_price,
+            "RSI": round(data['RSI'].iloc[-1], 2),
+            "SMA(20)": round(data['SMA'].iloc[-1], 2),
+            "EMA(20)": round(data['EMA'].iloc[-1], 2),
+            "Signal": signal
+        })
+
+    # After processing all tickers, display the summary table
+    if summary_data:
+        summary_df = pd.DataFrame(summary_data)
+        st.subheader("📋 Overview Summary")
+        st.dataframe(summary_df.style.format({
+            "Current Price (£)": "£{:.2f}",
+            "RSI": "{:.2f}",
+            "SMA(20)": "£{:.2f}",
+            "EMA(20)": "£{:.2f}"
+        }))
 
 elif page == "Crypto":
     st.title("Crypto Tracker")

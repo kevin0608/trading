@@ -57,18 +57,17 @@ def get_crypto_data(coin_id, days=60):
     df.drop("Timestamp", axis=1, inplace=True)
     return df
 
-# Safe formatting functions
 def safe_currency_format(x):
     try:
-        return f"${x:,.2f}"
-    except (ValueError, TypeError):
-        return ""
+        return f"£{x:,.2f}" if pd.notnull(x) else "N/A"
+    except:
+        return "N/A"
 
 def safe_float_format(x):
     try:
-        return f"{x:.2f}"
-    except (ValueError, TypeError):
-        return ""
+        return f"{x:.2f}" if pd.notnull(x) else "N/A"
+    except:
+        return "N/A"
 
 def calculate_macd(df):
     exp1 = df['Close'].ewm(span=12, adjust=False).mean()

@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import altair as alt
 import requests
-import datetime
 
 # ----- Helper functions -----
 def calculate_rsi(data, window=14):
@@ -22,8 +21,9 @@ def calculate_ema(data, window=20):
     return data['Close'].ewm(span=window, adjust=False).mean()
 
 def signal_generator(df):
+    if df[['RSI', 'SMA', 'EMA', 'Close']].dropna().empty:
+        return "Hold"
     rsi = float(df['RSI'].dropna().iloc[-1])
-    sma = float(df['SMA'].dropna().iloc[-1])
     ema = float(df['EMA'].dropna().iloc[-1])
     close = float(df['Close'].dropna().iloc[-1])
 
@@ -35,6 +35,8 @@ def signal_generator(df):
         return "Hold"
 
 def calculate_pivots(df):
+    if len(df) < 2:
+        return (np.nan,) * 5
     last_day = df.iloc[-2]
     high = last_day['High']
     low = last_day['Low']
@@ -50,13 +52,13 @@ def calculate_pivots(df):
 
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
-    params = {
-        "vs_currency": "usd",
-        "days": days,
-        "interval": "daily"
-    }
-    response = requests.get(url, params=params)
-    data = response.json()
+    params = {"vs_currency": "usd", "days": days, "interval": "daily"}
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+    except Exception:
+        return pd.DataFrame()
 
     if "prices" not in data:
         return pd.DataFrame()
@@ -68,10 +70,16 @@ def get_crypto_data(coin_id, days=60):
     df.drop("Timestamp", axis=1, inplace=True)
     return df
 
+@st.cache_data(ttl=3600)
+def get_stock_data(ticker):
+    data = yf.download(ticker, period="60d", interval="1d")
+    return data
+
 # ----- Login Screen -----
-st.title("🔐 Login")
+st.title("Login")
 password = st.text_input("Enter password:", type="password")
-if password != "123":
+if password != "2121":
+    st.warning("Incorrect password.")
     st.stop()
 
 # Sidebar Page Selector
@@ -81,7 +89,7 @@ page = st.sidebar.selectbox("Go to", ["Stocks", "Crypto"])
 if page == "Stocks":
     st.title("📈 Optimised Trading Assistant")
     if st.button("🔄 Refresh Data"):
-        st.rerun()
+        st.experimental_rerun()
 
     company_dict = {
         "Apple (AAPL)": "AAPL",
@@ -102,7 +110,7 @@ if page == "Stocks":
 
     for ticker in companies:
         st.subheader(f"📊 Stock: {ticker}")
-        data = yf.download(ticker, period="60d", interval="1d")
+        data = get_stock_data(ticker)
         if data.empty:
             st.warning("⚠️ Error fetching data.")
             continue
@@ -116,7 +124,7 @@ if page == "Stocks":
         pivot, r1, s1, r2, s2 = calculate_pivots(data)
 
         col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric("💵 Current Price", f"${current_price:.2f}")
+        col1.metric("💵 Current Price", f"£{current_price:.2f}")
         col2.metric("📈 RSI", f"{data['RSI'].iloc[-1]:.2f}")
         col3.metric("📉 SMA(20)", f"£{data['SMA'].iloc[-1]:.2f}")
         col4.metric("⚡ EMA(20)", f"£{data['EMA'].iloc[-1]:.2f}")
@@ -152,24 +160,10 @@ if page == "Stocks":
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
 
+        # Prepare pivot DataFrame for plotting
         pivot_df = data[['Close']].dropna().reset_index()
-        pivot_df['Pivot'] = [pivot] * len(pivot_df)
-        pivot_df['R1'] = [r1] * len(pivot_df)
-        pivot_df['S1'] = [s1] * len(pivot_df)
-        pivot_df['R2'] = [r2] * len(pivot_df)
-        pivot_df['S2'] = [s2] * len(pivot_df)
-
-        cols_min = ['Close', 'S1', 'S2']
-        cols_max = ['Close', 'R1', 'R2']
-
-        pivot_df[cols_min] = pivot_df[cols_min].apply(pd.to_numeric, errors='coerce')
-        pivot_df[cols_max] = pivot_df[cols_max].apply(pd.to_numeric, errors='coerce')
-
-        pivot_min = pivot.min() if hasattr(pivot, 'min') else pivot
-        pivot_max = pivot.max() if hasattr(pivot, 'max') else pivot
-
-        y_min = min(np.nanmin(pivot_df[cols_min].values), pivot_min)
-        y_max = max(np.nanmax(pivot_df[cols_max].values), pivot_max)
+        for level_name, level_value in zip(['Pivot', 'R1', 'S1', 'R2', 'S2'], [pivot, r1, s1, r2, s2]):
+            pivot_df[level_name] = level_value
 
         pivot_chart = (
             alt.Chart(pivot_df)
@@ -177,13 +171,48 @@ if page == "Stocks":
             .mark_line()
             .encode(
                 x='Date:T',
-                y=alt.Y('Value:Q', scale=alt.Scale(domain=[y_min, y_max])),
+                y='Value:Q',
                 color='Level:N'
             )
             .properties(title=f"{ticker} Close Price & Pivot Points")
         )
         st.altair_chart(pivot_chart, use_container_width=True)
 
+elif page == "Crypto":
+    st.title("💰 Crypto Tracker")
+
+    crypto_dict = {
+        "Bitcoin": "bitcoin",
+        "Ethereum": "ethereum",
+        "Binance Coin": "binancecoin",
+        "Cardano": "cardano",
+        "Dogecoin": "dogecoin"
+    }
+
+    selected_coins = st.multiselect("🔍 Select cryptocurrencies to track:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys()))
+
+    for coin_name in selected_coins:
+        st.subheader(f"📊 Crypto: {coin_name}")
+        coin_id = crypto_dict[coin_name]
+        df = get_crypto_data(coin_id, days=60)
+
+        if df.empty:
+            st.warning("⚠️ Error fetching data.")
+            continue
+
+        # Calculate SMA and EMA for crypto Close price
+        df['SMA'] = df['Close'].rolling(window=20).mean()
+        df['EMA'] = df['Close'].ewm(span=20, adjust=False).mean()
+
+        price_df = df.reset_index()
+        price_chart = (
+            alt.Chart(price_df)
+            .transform_fold(['Close', 'SMA', 'EMA'], as_=['Type', 'Price'])
+            .mark_line()
+            .encode(x='Date:T', y='Price:Q', color='Type:N')
+            .properties(title=f"{coin_name} Close Price, SMA(20) & EMA(20)")
+        )
+        st.altair_chart(price_chart, use_container_width=True)
 
 elif page == "Crypto":
     st.title("₿ Real-Time Crypto Tracker (API Based)")

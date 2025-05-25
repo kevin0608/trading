@@ -22,29 +22,17 @@ def calculate_ema(data, window=20):
 
 def signal_generator(df):
     try:
-        rsi = df['RSI'].dropna().iloc[-1]
-        sma = df['SMA'].dropna().iloc[-1]
-        ema = df['EMA'].dropna().iloc[-1]
-        close = df['Close'].dropna().iloc[-1]
-        prev_close = df['Close'].dropna().iloc[-2]
+        rsi = float(df['RSI'].dropna().iloc[-1])
+        sma = float(df['SMA'].dropna().iloc[-1])
+        ema = float(df['EMA'].dropna().iloc[-1])
+        close = float(df['Close'].dropna().iloc[-1])
     except IndexError:
         return "Hold"
 
-    # RSI thresholds adjusted
-    oversold = 35
-    overbought = 65
-
-    # Use RSI with EMA and SMA trend confirmation
-    # Buy signal: RSI oversold, price above EMA & SMA (bullish trend), price is increasing today
-    if (rsi < oversold) and (close > ema) and (close > sma) and (close > prev_close):
+    if (rsi < 30) and (close > ema):
         return "Buy"
-    
-    elif (rsi > overbought) and \
-     (close.iloc[-1] < ema) and \
-     (close.iloc[-1] < sma) and \
-     (close.iloc[-1] < prev_close):
+    elif (rsi > 70) and (close < ema):
         return "Sell"
-    
     else:
         return "Hold"
 

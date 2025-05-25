@@ -5,8 +5,6 @@ import numpy as np
 import altair as alt
 import requests
 import datetime
-import time
-import requests
 
 # ----- Helper functions -----
 def calculate_rsi(data, window=14):
@@ -35,44 +33,27 @@ def signal_generator(df):
         return "Sell"
     else:
         return "Hold"
+    
 
-import requests
-import pandas as pd
-import time
-
-def get_crypto_data(coin_id, days=60, max_retries=5):
+def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
     params = {
         "vs_currency": "usd",
-        "days": str(days),
+        "days": days,
         "interval": "daily"
     }
+    response = requests.get(url, params=params)
+    data = response.json()
 
-    for attempt in range(max_retries):
-        try:
-            response = requests.get(url, params=params, timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                if "prices" in data and data["prices"]:
-                    prices = data["prices"]
-                    df = pd.DataFrame(prices, columns=["Timestamp", "Close"])
-                    df["Date"] = pd.to_datetime(df["Timestamp"], unit="ms")
-                    df.set_index("Date", inplace=True)
-                    df.drop("Timestamp", axis=1, inplace=True)
-                    return df
-                else:
-                    # Data incomplete, retry after backoff
-                    time.sleep(2 ** attempt)
-            else:
-                # Handle non-200 HTTP codes (rate limits, server errors)
-                time.sleep(2 ** attempt)
-        except requests.RequestException as e:
-            # Network error, retry after backoff
-            time.sleep(2 ** attempt)
+    if "prices" not in data:
+        return pd.DataFrame()
 
-    # After max retries, return empty DataFrame
-    return pd.DataFrame()
-
+    prices = data["prices"]
+    df = pd.DataFrame(prices, columns=["Timestamp", "Close"])
+    df["Date"] = pd.to_datetime(df["Timestamp"], unit="ms")
+    df.set_index("Date", inplace=True)
+    df.drop("Timestamp", axis=1, inplace=True)
+    return df
 
 # ----- Login Screen -----
 st.title("Login")
@@ -105,9 +86,6 @@ if page == "Stocks":
     selected_names = st.multiselect("🔍 Select companies to track:", options=list(company_dict.keys()), default=list(company_dict.keys()))
     companies = [company_dict[name] for name in selected_names]
     capital = st.number_input("💰 Enter your starting capital (£):", min_value=1, value=500)
-
-    # List to hold summary info dicts
-    summary_data = []
 
     for ticker in companies:
         st.subheader(f"📊 Stock: {ticker}")
@@ -160,27 +138,6 @@ if page == "Stocks":
         threshold_30 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(30))
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
-
-        # Append summary info for this ticker
-        summary_data.append({
-            "Ticker": ticker,
-            "Current Price (£)": current_price,
-            "RSI": round(data['RSI'].iloc[-1], 2),
-            "SMA(20)": round(data['SMA'].iloc[-1], 2),
-            "EMA(20)": round(data['EMA'].iloc[-1], 2),
-            "Signal": signal
-        })
-
-    # After processing all tickers, display the summary table
-    if summary_data:
-        summary_df = pd.DataFrame(summary_data)
-        st.subheader("📋 Overview Summary")
-        st.dataframe(summary_df.style.format({
-            "Current Price (£)": "£{:.2f}",
-            "RSI": "{:.2f}",
-            "SMA(20)": "£{:.2f}",
-            "EMA(20)": "£{:.2f}"
-        }))
 
 elif page == "Crypto":
     st.title("Crypto Tracker")

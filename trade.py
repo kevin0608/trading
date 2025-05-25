@@ -98,7 +98,6 @@ if page == "Stocks":
         data['SMA'] = calculate_sma(data)
         data['EMA'] = calculate_ema(data)
 
-
         signal = signal_generator(data)
         current_price = float(data['Close'].dropna().iloc[-1])
 
@@ -118,6 +117,7 @@ if page == "Stocks":
         else:
             st.write("⏸ Hold – no action recommended.")
 
+        # Price Chart with Close, SMA, EMA
         price_df = data[['Close', 'SMA', 'EMA']].dropna().reset_index()
         price_chart = (
             alt.Chart(price_df)
@@ -127,6 +127,21 @@ if page == "Stocks":
             .properties(title=f"{ticker} Close Price, SMA(20) & EMA(20)")
         )
         st.altair_chart(price_chart, use_container_width=True)
+
+        # RSI Chart
+        rsi_df = data[['RSI']].dropna().reset_index()
+        rsi_chart = (
+            alt.Chart(rsi_df)
+            .mark_line(color='orange')
+            .encode(
+                x='Date:T',
+                y=alt.Y('RSI:Q', scale=alt.Scale(domain=[0, 100])),
+                tooltip=['Date:T', 'RSI:Q']
+            )
+            .properties(title=f"{ticker} RSI (14-day)")
+            .interactive()
+        )
+        st.altair_chart(rsi_chart, use_container_width=True)
 
 elif page == "Crypto":
     st.title("💰 Crypto Tracker")
@@ -165,62 +180,51 @@ elif page == "Crypto":
         st.altair_chart(price_chart, use_container_width=True)
 
 elif page == "Crypto":
-    st.title("₿ Real-Time Crypto Tracker (API Based)")
+    st.title("💰 Crypto Tracker")
 
     crypto_dict = {
-        "Bitcoin (BTC)": "bitcoin",
-        "Ethereum (ETH)": "ethereum",
-        "Tether (USDT)": "tether",
-        "BNB (BNB)": "binancecoin",
-        "Solana (SOL)": "solana",
-        "USD Coin (USDC)": "usd-coin",
-        "XRP (XRP)": "ripple",
-        "Dogecoin (DOGE)": "dogecoin",
-        "Cardano (ADA)": "cardano",
-        "Avalanche (AVAX)": "avalanche-2"
+        "Bitcoin": "bitcoin",
+        "Ethereum": "ethereum",
+        "Binance Coin": "binancecoin",
+        "Cardano": "cardano",
+        "Dogecoin": "dogecoin"
     }
 
-    selected_cryptos = st.multiselect("🔍 Select cryptocurrencies to track:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys()))
-    capital = st.number_input("💰 Enter your crypto capital ($):", min_value=1, value=500)
+    selected_coins = st.multiselect("🔍 Select cryptocurrencies to track:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys()))
 
-    for name in selected_cryptos:
-        coin_id = crypto_dict[name]
-        df = get_crypto_data(coin_id)
+    for coin_name in selected_coins:
+        st.subheader(f"📊 Crypto: {coin_name}")
+        coin_id = crypto_dict[coin_name]
+        df = get_crypto_data(coin_id, days=60)
 
-        if df.empty or len(df) < 20:
-            st.warning(f"⚠️ Not enough data for {name}.")
+        if df.empty:
+            st.warning("⚠️ Error fetching data.")
             continue
 
-        df['SMA'] = calculate_sma(df)
-        df['EMA'] = calculate_ema(df)
+        # Calculate indicators
+        df['SMA'] = df['Close'].rolling(window=20).mean()
+        df['EMA'] = df['Close'].ewm(span=20, adjust=False).mean()
         df['RSI'] = calculate_rsi(df)
 
-        signal = signal_generator(df)
-        current_price = float(df['Close'].iloc[-1])
-
-        st.subheader(f"💸 {name}")
-        col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric("💵 Price", f"${current_price:.2f}")
-        col2.metric("📈 RSI", f"{df['RSI'].iloc[-1]:.2f}")
-        col3.metric("📉 SMA(20)", f"${df['SMA'].iloc[-1]:.2f}")
-        col4.metric("⚡ EMA(20)", f"${df['EMA'].iloc[-1]:.2f}")
-        col5.markdown(f"📌 **Signal:** {signal}")
-
-        if signal == "Buy":
-            position_size = capital * 0.25
-            quantity = position_size / current_price
-            st.info(f"🛒 Suggested Buy: ${position_size:.2f} (~{quantity:.4f} units)")
-        elif signal == "Sell":
-            st.warning("📤 Consider selling your position.")
-        else:
-            st.write("⏸ Hold – no action recommended.")
-
-        price_df = df[['Close', 'SMA', 'EMA']].dropna().reset_index()
-        chart = (
+        price_df = df.reset_index()
+        price_chart = (
             alt.Chart(price_df)
             .transform_fold(['Close', 'SMA', 'EMA'], as_=['Type', 'Price'])
             .mark_line()
             .encode(x='Date:T', y='Price:Q', color='Type:N')
-            .properties(title=f"{name} Price & Indicators")
+            .properties(title=f"{coin_name} Close Price, SMA(20) & EMA(20)")
         )
-        st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(price_chart, use_container_width=True)
+
+        # RSI Chart
+        rsi_df = df.reset_index()
+        rsi_chart = (
+            alt.Chart(rsi_df)
+            .mark_line(color='orange')
+            .encode(
+                x='Date:T',
+                y=alt.Y('RSI:Q', scale=alt.Scale(domain=[0, 100]))
+            )
+            .properties(title=f"{coin_name} RSI (14-day)")
+        )
+        st.altair_chart(rsi_chart, use_container_width=True)

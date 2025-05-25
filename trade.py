@@ -32,13 +32,36 @@ def signal_generator(df):
     else:
         return "Hold"
 
+#----------------------------------------- Crypto ------------------------------
+import requests
+import datetime
+
+def get_crypto_data(coin_id, days=60):
+    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
+    params = {
+        "vs_currency": "usd",
+        "days": days,
+        "interval": "daily"
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    if "prices" not in data:
+        return pd.DataFrame()
+
+    prices = data["prices"]
+    df = pd.DataFrame(prices, columns=["Timestamp", "Close"])
+    df["Date"] = pd.to_datetime(df["Timestamp"], unit="ms")
+    df.set_index("Date", inplace=True)
+    df.drop("Timestamp", axis=1, inplace=True)
+    return df
+
 # ----- Login Screen -----
 st.title("🔐 Login")
 
 password = st.text_input("Enter password:", type="password")
 
 if password != "123":
-    st.warning("❌ Incorrect password. Please try again.")
     st.stop()  # Stop execution here if password is wrong
 
 # Sidebar Page Selector
@@ -148,31 +171,8 @@ if page == "📈 Stocks":
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
 
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
-#-----------------------------------------------------------------------------------------------------------------------
-import requests
-import datetime
-
-def get_crypto_data(coin_id, days=60):
-    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
-    params = {
-        "vs_currency": "usd",
-        "days": days,
-        "interval": "daily"
-    }
-    response = requests.get(url, params=params)
-    data = response.json()
-
-    if "prices" not in data:
-        return pd.DataFrame()
-
-    prices = data["prices"]
-    df = pd.DataFrame(prices, columns=["Timestamp", "Close"])
-    df["Date"] = pd.to_datetime(df["Timestamp"], unit="ms")
-    df.set_index("Date", inplace=True)
-    df.drop("Timestamp", axis=1, inplace=True)
-    return df
-
-if page == "₿ Crypto":
+    #-----------------------------------------------------------------------------------------------------------------------
+elif page == "₿ Crypto":
     st.title("₿ Real-Time Crypto Tracker (API Based)")
 
     crypto_dict = {

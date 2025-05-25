@@ -32,17 +32,48 @@ def signal_generator(df):
         rsi = float(df['RSI'].dropna().iloc[-1])
         close = float(df['Close'].dropna().iloc[-1])
         ema = float(df['EMA'].dropna().iloc[-1])
-    except (IndexError, KeyError, ValueError) as e:
+        sma = float(df['SMA'].dropna().iloc[-1])
+        macd = float(df['MACD'].dropna().iloc[-1])
+        macd_signal = float(df['MACD Signal'].dropna().iloc[-1])
+    except (IndexError, KeyError, ValueError):
         return "Error"
 
-    print(f"RSI: {rsi}, Close: {close}, EMA: {ema}")
+    print(f"RSI: {rsi:.2f}, Close: {close:.2f}, EMA: {ema:.2f}, SMA: {sma:.2f}, MACD: {macd:.2f}, MACD Signal: {macd_signal:.2f}")
 
+    score = 0
+
+    # RSI scoring
     if rsi < 40:
-        return "Buy"
+        score += 1
     elif rsi > 60:
+        score -= 1
+
+    # Price above EMA indicates uptrend
+    if close > ema:
+        score += 1
+    else:
+        score -= 1
+
+    # EMA above SMA shows bullish crossover
+    if ema > sma:
+        score += 1
+    else:
+        score -= 1
+
+    # MACD above MACD Signal = bullish momentum
+    if macd > macd_signal:
+        score += 1
+    else:
+        score -= 1
+
+    # Final decision
+    if score >= 2:
+        return "Buy"
+    elif score <= -2:
         return "Sell"
     else:
         return "Hold"
+
 
 
 def get_crypto_data(coin_id, days=60):

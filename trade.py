@@ -138,7 +138,6 @@ if page == "Stocks":
         threshold_30 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(30))
         threshold_70 = alt.Chart(rsi_df).mark_rule(strokeDash=[5,5], color='red').encode(y=alt.datum(70))
         st.altair_chart(rsi_chart + threshold_30 + threshold_70, use_container_width=True)
-
 elif page == "Crypto":
     st.title("Crypto Tracker")
     if st.button("🔄 Refresh Data"):
@@ -162,18 +161,18 @@ elif page == "Crypto":
         options=list(crypto_dict.keys()),
         default=list(crypto_dict.keys())
     )
-    coins = [crypto_dict[name] for name in selected_coins]
+
+    summary_data = []
 
     for coin_name in selected_coins:
-        st.subheader(f"📊 Crypto: {coin_name}")
         coin_id = crypto_dict[coin_name]
         df = get_crypto_data(coin_id, days=60)
 
         if df.empty:
-            st.warning("⚠️ Error fetching data.")
+            st.warning(f"⚠️ Error fetching data for {coin_name}.")
             continue
 
-        # Calculate indicators: SMA, EMA, RSI
+        # Calculate indicators
         df['SMA'] = calculate_sma(df)
         df['EMA'] = calculate_ema(df)
         df['RSI'] = calculate_rsi(df)
@@ -182,24 +181,34 @@ elif page == "Crypto":
         signal = signal_generator(df)
 
         current_price = float(df['Close'].dropna().iloc[-1])
+        sma = df['SMA'].iloc[-1]
+        ema = df['EMA'].iloc[-1]
+        rsi = df['RSI'].iloc[-1]
 
-        # Display key metrics in columns
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("💵 Current Price", f"${current_price:.2f}")
-        col2.metric("📈 RSI", f"{df['RSI'].iloc[-1]:.2f}")
-        col3.metric("📉 SMA(20)", f"${df['SMA'].iloc[-1]:.2f}")
-        col4.metric("⚡ EMA(20)", f"${df['EMA'].iloc[-1]:.2f}")
+        summary_data.append({
+            "Crypto": coin_name,
+            "Price ($)": f"{current_price:.2f}",
+            "SMA(20)": f"{sma:.2f}",
+            "EMA(20)": f"{ema:.2f}",
+            "RSI": f"{rsi:.2f}",
+            "Signal": signal
+        })
 
-        st.markdown(f"📌 **Signal:** {signal}")
+    if summary_data:
+        summary_df = pd.DataFrame(summary_data)
+        st.dataframe(summary_df)
 
-        if signal == "Buy":
-            st.info("🛍 Suggested: Consider Buying.")
-        elif signal == "Sell":
-            st.warning("📤 Suggested: Consider Selling.")
-        else:
-            st.write("⏸ Hold – no action recommended.")
+    # Optional: Show detailed charts per coin below summary table
+    for coin_name in selected_coins:
+        coin_id = crypto_dict[coin_name]
+        df = get_crypto_data(coin_id, days=60)
+        if df.empty:
+            continue
 
-        # Price chart with Close, SMA, EMA
+        df['SMA'] = calculate_sma(df)
+        df['EMA'] = calculate_ema(df)
+        df['RSI'] = calculate_rsi(df)
+
         price_df = df.reset_index()
         price_chart = (
             alt.Chart(price_df)
@@ -210,7 +219,6 @@ elif page == "Crypto":
         )
         st.altair_chart(price_chart, use_container_width=True)
 
-        # RSI chart with scale domain [0, 100]
         rsi_df = df.reset_index()
         rsi_chart = (
             alt.Chart(rsi_df)
@@ -222,4 +230,3 @@ elif page == "Crypto":
             .properties(title=f"{coin_name} RSI (14-day)")
         )
         st.altair_chart(rsi_chart, use_container_width=True)
-

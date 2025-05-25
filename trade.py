@@ -174,13 +174,11 @@ elif page == "Crypto":
             .properties(title=f"{coin_name} Close Price, SMA(20) & EMA(20)")
         )
         st.altair_chart(price_chart, use_container_width=True)
-
 elif page == "Crypto":
     st.title("💰 Crypto Tracker")
     if st.button("🔄 Refresh Data"):
         st.rerun()
 
-    
     crypto_dict = {
         "Bitcoin": "bitcoin",
         "Ethereum": "ethereum",
@@ -195,12 +193,12 @@ elif page == "Crypto":
     }
 
     selected_coins = st.multiselect(
-        "Select cryptos to track:",
+        "🔍 Select cryptocurrencies to track:",
         options=list(crypto_dict.keys()),
         default=list(crypto_dict.keys())
     )
+    coins = [crypto_dict[name] for name in selected_coins]
 
-    st.write("Selected cryptos:", selected_coins)
     for coin_name in selected_coins:
         st.subheader(f"📊 Crypto: {coin_name}")
         coin_id = crypto_dict[coin_name]
@@ -210,7 +208,7 @@ elif page == "Crypto":
             st.warning("⚠️ Error fetching data.")
             continue
 
-        # Calculate indicators using your existing functions
+        # Calculate indicators: SMA, EMA, RSI
         df['SMA'] = calculate_sma(df)
         df['EMA'] = calculate_ema(df)
         df['RSI'] = calculate_rsi(df)
@@ -219,6 +217,8 @@ elif page == "Crypto":
         signal = signal_generator(df)
 
         current_price = float(df['Close'].dropna().iloc[-1])
+
+        # Display key metrics in columns
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("💵 Current Price", f"${current_price:.2f}")
         col2.metric("📈 RSI", f"{df['RSI'].iloc[-1]:.2f}")
@@ -245,7 +245,7 @@ elif page == "Crypto":
         )
         st.altair_chart(price_chart, use_container_width=True)
 
-        # RSI chart
+        # RSI chart with scale domain [0, 100]
         rsi_df = df.reset_index()
         rsi_chart = (
             alt.Chart(rsi_df)

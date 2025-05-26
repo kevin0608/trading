@@ -73,67 +73,56 @@ def signal_generator(df):
         return "Hold"
     
 def fast_commodity_signal(df):
-    try:
-        # Calculate indicators with slightly wider windows
-        rsi_series = calculate_rsi(df, window=7)
-        ema_series = calculate_ema(df, window=5)
-        sma_series = calculate_sma(df, window=5)
-        macd, macd_signal = calculate_macd(df, fast=8, slow=21, signal=5)
+    spread_pct = 0.0015  # fixed spread of 0.15%
 
-        rsi = float(rsi_series.dropna().iloc[-1])
+    try:
+        rsi = float(calculate_rsi(df, window=5).dropna().iloc[-1])
         close = float(df['Close'].dropna().iloc[-1])
-        ema = float(ema_series.dropna().iloc[-1])
-        sma = float(sma_series.dropna().iloc[-1])
+        ema = float(calculate_ema(df, window=3).dropna().iloc[-1])
+        sma = float(calculate_sma(df, window=3).dropna().iloc[-1])
+        macd, macd_signal = calculate_macd(df, fast=5, slow=13, signal=3)
         macd_val = float(macd.dropna().iloc[-1])
         macd_sig = float(macd_signal.dropna().iloc[-1])
         prev_macd = float(macd.dropna().iloc[-2])
-        prev_close = float(df['Close'].dropna().iloc[-2])
     except (IndexError, KeyError, ValueError):
         return "Error"
 
+    buy_price = close * (1 + spread_pct / 2)
+    sell_price = close * (1 - spread_pct / 2)
+
     score = 0
 
-    # RSI logic — now with buffer zones
-    if rsi < 30:
-        score += 1.5  # Oversold
-    elif rsi > 70:
-        score -= 1.5  # Overbought
-    elif 30 <= rsi <= 40:
-        score += 0.5
-    elif 60 <= rsi <= 70:
-        score -= 0.5
-
-    # Price crossing above/below EMA
-    if close > ema and prev_close <= ema:
+    if rsi < 35:
         score += 1.5
-    elif close < ema and prev_close >= ema:
+    elif rsi > 65:
         score -= 1.5
 
-    # EMA vs SMA direction
+    if close > ema:
+        score += 1.5
+    else:
+        score -= 1.5
+
     if ema > sma:
         score += 1
     else:
         score -= 1
 
-    # MACD crossover with momentum
-    if macd_val > macd_sig and prev_macd <= macd_sig:
+    if macd_val > macd_sig:
         score += 1.5
-    elif macd_val < macd_sig and prev_macd >= macd_sig:
+    else:
         score -= 1.5
 
-    # MACD trending upward or downward
     if macd_val > prev_macd:
-        score += 0.5
+        score += 1
     else:
-        score -= 0.5
+        score -= 1
 
-    # Final decision
-    if score >= 3:
-        return "Buy"
-    elif score <= -3:
-        return "Sell"
+    if score >= 3.5:
+        return f"Buy at approx £{buy_price:.2f}"
+    elif score <= -3.5:
+        return f"Sell at approx £{sell_price:.2f}"
     else:
-        return "Hold"
+        return ""  # No signal
 
 
 def get_crypto_data(coin_id, days=60):

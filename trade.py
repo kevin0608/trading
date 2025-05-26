@@ -28,88 +28,58 @@ def calculate_macd(data, fast=12, slow=26, signal=9):
     macd_signal = macd.ewm(span=signal, adjust=False).mean()
     return macd, macd_signal
 
-def fast_commodity_signal(df):
+def signal_generator(df):
     try:
-        df = df.copy()
-        df.dropna(inplace=True)
-
-        # Calculate indicators
-        rsi = talib.RSI(df['Close'], timeperiod=5)
-        ema = talib.EMA(df['Close'], timeperiod=3)
-        sma = talib.SMA(df['Close'], timeperiod=3)
-        macd, macd_signal, _ = talib.MACD(df['Close'], fastperiod=5, slowperiod=13, signalperiod=3)
-        atr = talib.ATR(df['High'], df['Low'], df['Close'], timeperiod=5)
-
-        # Candlestick pattern (e.g., bullish engulfing)
-        engulfing = talib.CDLENGULFING(df['Open'], df['High'], df['Low'], df['Close'])
-
-        # Get last values
-        rsi_val = rsi.iloc[-1]
-        close = df['Close'].iloc[-1]
-        ema_val = ema.iloc[-1]
-        sma_val = sma.iloc[-1]
-        macd_val = macd.iloc[-1]
-        macd_sig_val = macd_signal.iloc[-1]
-        prev_macd = macd.iloc[-2]
-        atr_val = atr.iloc[-1]
-        recent_candle = engulfing.iloc[-1]
-
-    except Exception:
+        rsi = float(df['RSI'].dropna().iloc[-1])
+        close = float(df['Close'].dropna().iloc[-1])
+        ema = float(df['EMA'].dropna().iloc[-1])
+        sma = float(df['SMA'].dropna().iloc[-1])
+        macd = float(df['MACD'].dropna().iloc[-1])
+        macd_signal = float(df['MACD Signal'].dropna().iloc[-1])
+    except (IndexError, KeyError, ValueError):
         return "Error"
 
     score = 0
 
-    # RSI
-    if rsi_val < 35:
-        score += 1.5
-    elif rsi_val > 65:
-        score -= 1.5
+    # RSI scoring
+    if rsi < 40:
+        score += 1
+    elif rsi > 60:
+        score -= 1
 
-    # Momentum
-    if close > ema_val:
-        score += 1.5
-    else:
-        score -= 1.5
-
-    if ema_val > sma_val:
+    # Price above EMA indicates uptrend
+    if close > ema:
         score += 1
     else:
         score -= 1
 
-    if macd_val > macd_sig_val:
-        score += 1.5
-    else:
-        score -= 1.5
-
-    if macd_val > prev_macd:
+    # EMA above SMA shows bullish crossover
+    if ema > sma:
         score += 1
     else:
         score -= 1
 
-    # Candle pattern boost
-    if recent_candle > 0:
-        score += 1.5  # Bullish engulfing
-    elif recent_candle < 0:
-        score -= 1.5  # Bearish engulfing
-
-    # Volatility filter
-    if atr_val < close * 0.005:  # Less than 0.5% movement
-        return "Hold"  # Too flat
+    # MACD above MACD Signal = bullish momentum
+    if macd > macd_signal:
+        score += 1
+    else:
+        score -= 1
 
     # Final decision
-    if score >= 4:
+    if score >= 2:
         return "Buy"
-    elif score <= -4:
+    elif score <= -2:
         return "Sell"
     else:
         return "Hold"
-
+    
 def fast_commodity_signal(df):
     try:
-        rsi_series = calculate_rsi(df, window=14)
-        ema_series = calculate_ema(df, window=9)
-        sma_series = calculate_sma(df, window=20)
-        macd, macd_signal = calculate_macd(df)
+        # Calculate indicators with slightly wider windows
+        rsi_series = calculate_rsi(df, window=7)
+        ema_series = calculate_ema(df, window=5)
+        sma_series = calculate_sma(df, window=5)
+        macd, macd_signal = calculate_macd(df, fast=8, slow=21, signal=5)
 
         rsi = float(rsi_series.dropna().iloc[-1])
         close = float(df['Close'].dropna().iloc[-1])
@@ -117,26 +87,54 @@ def fast_commodity_signal(df):
         sma = float(sma_series.dropna().iloc[-1])
         macd_val = float(macd.dropna().iloc[-1])
         macd_sig = float(macd_signal.dropna().iloc[-1])
-    except:
+        prev_macd = float(macd.dropna().iloc[-2])
+        prev_close = float(df['Close'].dropna().iloc[-2])
+    except (IndexError, KeyError, ValueError):
         return "Error"
 
-    # Trend filter
-    trend = "uptrend" if close > sma else "downtrend"
+    score = 0
 
-    # Signal logic
-    if trend == "uptrend":
-        if rsi < 30 and macd_val > macd_sig and close > ema:
-            return "Buy"
-        else:
-            return "Hold"
+    # RSI logic — now with buffer zones
+    if rsi < 30:
+        score += 1.5  # Oversold
+    elif rsi > 70:
+        score -= 1.5  # Overbought
+    elif 30 <= rsi <= 40:
+        score += 0.5
+    elif 60 <= rsi <= 70:
+        score -= 0.5
 
-    elif trend == "downtrend":
-        if rsi > 70 and macd_val < macd_sig and close < ema:
-            return "Sell"
-        else:
-            return "Hold"
+    # Price crossing above/below EMA
+    if close > ema and prev_close <= ema:
+        score += 1.5
+    elif close < ema and prev_close >= ema:
+        score -= 1.5
 
-    return "Hold"
+    # EMA vs SMA direction
+    if ema > sma:
+        score += 1
+    else:
+        score -= 1
+
+    # MACD crossover with momentum
+    if macd_val > macd_sig and prev_macd <= macd_sig:
+        score += 1.5
+    elif macd_val < macd_sig and prev_macd >= macd_sig:
+        score -= 1.5
+
+    # MACD trending upward or downward
+    if macd_val > prev_macd:
+        score += 0.5
+    else:
+        score -= 0.5
+
+    # Final decision
+    if score >= 3:
+        return "Buy"
+    elif score <= -3:
+        return "Sell"
+    else:
+        return "Hold"
 
 
 def get_crypto_data(coin_id, days=60):

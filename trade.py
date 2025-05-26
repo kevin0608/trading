@@ -463,7 +463,7 @@ if page == "Commodity":
         selected_commodities = st.multiselect(
             "Choose commodities to analyze:",
             options=list(commodity_tickers.keys()),
-            default=list(company_dict.keys())[:20]
+            default=list(commodity_tickers.keys())[:20]  # you can adjust how many to show by default
         )
 
     rows = []

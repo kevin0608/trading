@@ -436,7 +436,7 @@ crypto_dict = {
 if page == "Commodity":
 
     # --- UI Starts Here ---
-    st.title("⚡ Fast Commodity Signal Generator (Speed Trading)")
+    st.title("Commodity (Speed Trading)")
 
     commodity_tickers = {
     "Gold (XAU/USD)": "GC=F",
@@ -458,11 +458,13 @@ if page == "Commodity":
     "Live Cattle": "LE=F",
     "Lean Hogs": "HE=F"
 }
-    selected_commodities = st.multiselect(
-        "Select commodities to analyze:",
-        options=list(commodity_tickers.keys()),
-        default=["Gold (XAU/USD)", "Crude Oil (WTI)"]
-    )
+    
+    with st.expander("🛢️ Select Commodities"):
+        selected_commodities = st.multiselect(
+            "Choose commodities to analyze:",
+            options=list(commodity_tickers.keys()),
+            default=["Gold (XAU/USD)", "Crude Oil (WTI)"]
+        )
 
     rows = []
     for name in selected_commodities:
@@ -488,9 +490,9 @@ if page == "Commodity":
         rows.append({
             "Commodity": name,
             "Current Price": price,
-            "RSI(7)": round(rsi.dropna().iloc[-1], 2),
-            "EMA(5)": round(ema.dropna().iloc[-1], 2),
-            "SMA(5)": round(sma.dropna().iloc[-1], 2),
+            "RSI(7)": round(float(rsi.dropna().iloc[-1]), 2),
+            "EMA(5)": round(float(ema.dropna().iloc[-1]), 2),
+            "SMA(5)": round(float(sma.dropna().iloc[-1]), 2),
             "Signal": signal
         })
 
@@ -498,7 +500,7 @@ if page == "Commodity":
 
     st.subheader("📊 Live Speed Trading Signals")
 
-    # Dynamically format numeric columns only
+    # Smart formatting
     format_dict = {}
     for col in df.columns:
         if pd.api.types.is_numeric_dtype(df[col]):

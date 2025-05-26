@@ -434,9 +434,10 @@ crypto_dict = {
     "Waves": "waves"
 }
 if page == "Commodity":
-
     # --- UI Starts Here ---
     st.title("Commodity (Speed Trading)")
+    if st.button("🔄 Refresh Data"):
+        st.rerun()
 
     commodity_tickers = {
     "Gold (XAU/USD)": "GC=F",
@@ -469,7 +470,7 @@ if page == "Commodity":
     rows = []
     for name in selected_commodities:
         ticker = commodity_tickers[name]
-        data = yf.download(ticker, period="5d", interval="15m", progress=False)
+        data = yf.download(ticker, period="1d", interval="1m", progress=False)
         if data.empty:
             continue
 

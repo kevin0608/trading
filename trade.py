@@ -72,6 +72,51 @@ def signal_generator(df):
     else:
         return "Hold"
 
+def fast_commodity_signal(df):
+    try:
+        # Use faster RSI window for quick momentum shifts
+        rsi = float(calculate_rsi(df, window=7).dropna().iloc[-1])
+        close = float(df['Close'].dropna().iloc[-1])
+        ema = float(calculate_ema(df, window=5).dropna().iloc[-1])
+        sma = float(calculate_sma(df, window=5).dropna().iloc[-1])
+        macd, macd_signal = calculate_macd(df, fast=5, slow=13, signal=3)
+        macd = float(macd.dropna().iloc[-1])
+        macd_signal = float(macd_signal.dropna().iloc[-1])
+    except (IndexError, KeyError, ValueError):
+        return "Error"
+
+    score = 0
+
+    # RSI scoring: fast window
+    if rsi < 30:
+        score += 1
+    elif rsi > 70:
+        score -= 1
+
+    # Momentum signals
+    if close > ema:
+        score += 1
+    else:
+        score -= 1
+
+    if ema > sma:
+        score += 1
+    else:
+        score -= 1
+
+    if macd > macd_signal:
+        score += 1
+    else:
+        score -= 1
+
+    if score >= 2:
+        return "Buy"
+    elif score <= -2:
+        return "Sell"
+    else:
+        return "Hold"
+
+
 def get_crypto_data(coin_id, days=60):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
     params = {
@@ -113,7 +158,7 @@ if password != "2121":
 
 # Sidebar Page Selector
 st.sidebar.title("Navigation")
-page = st.sidebar.selectbox("Go to", ["Stocks", "Crypto", "Summary"])
+page = st.sidebar.selectbox("Go to", ["Commodity", "Stocks", "Crypto", "Summary"])
 
 company_dict = {
     # Tech & IT
@@ -388,13 +433,83 @@ crypto_dict = {
     "Zilliqa": "zilliqa",
     "Waves": "waves"
 }
+if page == "Commodity":
 
+    # --- UI Starts Here ---
+    st.title("⚡ Fast Commodity Signal Generator (Speed Trading)")
+
+    commodity_tickers = {
+    "Gold (XAU/USD)": "GC=F",
+    "Silver (XAG/USD)": "SI=F",
+    "Crude Oil (WTI)": "CL=F",
+    "Brent Oil": "BZ=F",
+    "Natural Gas": "NG=F",
+    "Platinum": "PL=F",
+    "Copper": "HG=F",
+    "Heating Oil": "HO=F",
+    "Gasoline (RBOB)": "RB=F",
+    "Soybeans": "ZS=F",
+    "Corn": "ZC=F",
+    "Wheat": "ZW=F",
+    "Cotton": "CT=F",
+    "Coffee": "KC=F",
+    "Sugar": "SB=F",
+    "Cocoa": "CC=F",
+    "Live Cattle": "LE=F",
+    "Lean Hogs": "HE=F"
+}
+
+    selected_commodities = st.multiselect(
+        "Select commodities to analyze:",
+        options=list(commodity_tickers.keys()),
+        default=["Gold (XAU/USD)", "Crude Oil (WTI)"]
+    )
+
+    rows = []
+    for name in selected_commodities:
+        ticker = commodity_tickers[name]
+        data = yf.download(ticker, period="5d", interval="15m", progress=False)
+        if data.empty:
+            continue
+
+        rsi = calculate_rsi(data)
+        sma = calculate_sma(data)
+        ema = calculate_ema(data)
+        macd, macd_signal = calculate_macd(data)
+        
+        data['RSI'] = rsi
+        data['SMA'] = sma
+        data['EMA'] = ema
+        data['MACD'] = macd
+        data['MACD Signal'] = macd_signal
+
+        signal = fast_commodity_signal(data)
+        price = float(data['Close'].dropna().iloc[-1])
+
+        rows.append({
+            "Commodity": name,
+            "Current Price": price,
+            "RSI(7)": round(rsi.dropna().iloc[-1], 2),
+            "EMA(5)": round(ema.dropna().iloc[-1], 2),
+            "SMA(5)": round(sma.dropna().iloc[-1], 2),
+            "Signal": signal
+        })
+
+    df = pd.DataFrame(rows)
+
+    st.subheader("📊 Live Speed Trading Signals")
+    st.dataframe(df.style.format({
+        "Current Price": "£{:.2f}",
+        "RSI(7)": "{:.2f}",
+        "EMA(5)": "£{:.2f}",
+        "SMA(5)": "£{:.2f}"
+    }))
 
 # Stocks Page
-if page == "Stocks":
+elif page == "Stocks":
     st.title("Stock Tracker")
     if st.button("🔄 Refresh Data"):
-        st.experimental_rerun()
+        st.rerun()
 
     selected_names = st.multiselect("🔍 Select companies to track:", options=list(company_dict.keys()), default=list(company_dict.keys())[:10])
     companies = [company_dict[name] for name in selected_names]
@@ -456,7 +571,7 @@ if page == "Stocks":
 elif page == "Crypto":
     st.title("Crypto Tracker")
     if st.button("🔄 Refresh Data"):
-        st.experimental_rerun()
+        st.rerun()
 
     selected_coins = st.multiselect("🔍 Select cryptocurrencies to track:", options=list(crypto_dict.keys()), default=list(crypto_dict.keys())[:10])
     coins = [crypto_dict[name] for name in selected_coins]

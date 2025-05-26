@@ -458,7 +458,6 @@ if page == "Commodity":
     "Live Cattle": "LE=F",
     "Lean Hogs": "HE=F"
 }
-
     selected_commodities = st.multiselect(
         "Select commodities to analyze:",
         options=list(commodity_tickers.keys()),
@@ -473,8 +472,8 @@ if page == "Commodity":
             continue
 
         rsi = calculate_rsi(data)
-        sma = calculate_sma(data)
-        ema = calculate_ema(data)
+        sma = calculate_sma(data, window=5)
+        ema = calculate_ema(data, window=5)
         macd, macd_signal = calculate_macd(data)
         
         data['RSI'] = rsi
@@ -498,12 +497,18 @@ if page == "Commodity":
     df = pd.DataFrame(rows)
 
     st.subheader("📊 Live Speed Trading Signals")
-    st.dataframe(df.style.format({
-        "Current Price": "£{:.2f}",
-        "RSI(7)": "{:.2f}",
-        "EMA(5)": "£{:.2f}",
-        "SMA(5)": "£{:.2f}"
-    }))
+
+    # Dynamically format numeric columns only
+    format_dict = {}
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            if "Price" in col or "EMA" in col or "SMA" in col:
+                format_dict[col] = "£{:.2f}"
+            else:
+                format_dict[col] = "{:.2f}"
+
+    st.dataframe(df.style.format(format_dict))
+
 
 # Stocks Page
 elif page == "Stocks":

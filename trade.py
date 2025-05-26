@@ -463,7 +463,7 @@ if page == "Commodity":
         selected_commodities = st.multiselect(
             "Choose commodities to analyze:",
             options=list(commodity_tickers.keys()),
-            default=["Gold (XAU/USD)", "Crude Oil (WTI)"]
+            default=list(company_dict.keys())[:20]
         )
 
     rows = []

@@ -73,56 +73,73 @@ def signal_generator(df):
         return "Hold"
     
 def fast_commodity_signal(df):
-    spread_pct = 0.0015  # fixed spread of 0.15%
+    spread_pct = 0.0015  # 0.15% estimated spread
+    position = None  # can be "Bought" or None
+    buy_price = 0
+    signals = []
 
-    try:
-        rsi = float(calculate_rsi(df, window=5).dropna().iloc[-1])
-        close = float(df['Close'].dropna().iloc[-1])
-        ema = float(calculate_ema(df, window=3).dropna().iloc[-1])
-        sma = float(calculate_sma(df, window=3).dropna().iloc[-1])
-        macd, macd_signal = calculate_macd(df, fast=5, slow=13, signal=3)
-        macd_val = float(macd.dropna().iloc[-1])
-        macd_sig = float(macd_signal.dropna().iloc[-1])
-        prev_macd = float(macd.dropna().iloc[-2])
-    except (IndexError, KeyError, ValueError):
-        return "Error"
+    rsi_series = calculate_rsi(df, window=5)
+    ema_series = calculate_ema(df, window=3)
+    sma_series = calculate_sma(df, window=3)
+    macd, macd_signal = calculate_macd(df, fast=5, slow=13, signal=3)
 
-    buy_price = close * (1 + spread_pct / 2)
-    sell_price = close * (1 - spread_pct / 2)
+    for i in range(2, len(df)):
+        try:
+            close = df['Close'].iloc[i]
+            rsi = rsi_series.iloc[i]
+            ema = ema_series.iloc[i]
+            sma = sma_series.iloc[i]
+            macd_val = macd.iloc[i]
+            macd_sig = macd_signal.iloc[i]
+            prev_macd = macd.iloc[i - 1]
+        except:
+            signals.append("")
+            continue
 
-    score = 0
+        score = 0
 
-    if rsi < 35:
-        score += 1.5
-    elif rsi > 65:
-        score -= 1.5
+        if rsi < 35:
+            score += 1.5
+        elif rsi > 65:
+            score -= 1.5
 
-    if close > ema:
-        score += 1.5
-    else:
-        score -= 1.5
+        if close > ema:
+            score += 1.5
+        else:
+            score -= 1.5
 
-    if ema > sma:
-        score += 1
-    else:
-        score -= 1
+        if ema > sma:
+            score += 1
+        else:
+            score -= 1
 
-    if macd_val > macd_sig:
-        score += 1.5
-    else:
-        score -= 1.5
+        if macd_val > macd_sig:
+            score += 1.5
+        else:
+            score -= 1.5
 
-    if macd_val > prev_macd:
-        score += 1
-    else:
-        score -= 1
+        if macd_val > prev_macd:
+            score += 1
+        else:
+            score -= 1
 
-    if score >= 3.5:
-        return f"Buy at approx £{buy_price:.2f}"
-    elif score <= -3.5:
-        return f"Sell at approx £{sell_price:.2f}"
-    else:
-        return ""  # No signal
+        # Only Buy if no position
+        if position is None and score >= 3.5:
+            position = "Bought"
+            buy_price = close * (1 + spread_pct / 2)
+            signals.append(f"Buy @ £{buy_price:.2f}")
+        # Only Sell if in position and price is above our buy_price (after spread)
+        elif position == "Bought" and close >= buy_price * (1 + spread_pct):
+            sell_price = close * (1 - spread_pct / 2)
+            signals.append(f"Sell @ £{sell_price:.2f}")
+            position = None  # Reset position
+        else:
+            signals.append("")  # No action
+
+    # Fill missing start signals
+    signals = [""] * (len(df) - len(signals)) + signals
+    df["Signal"] = signals
+    return df
 
 
 def get_crypto_data(coin_id, days=60):

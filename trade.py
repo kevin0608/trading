@@ -74,47 +74,61 @@ def signal_generator(df):
 
 def fast_commodity_signal(df):
     try:
-        # Use faster RSI window for quick momentum shifts
-        rsi = float(calculate_rsi(df, window=7).dropna().iloc[-1])
-        close = float(df['Close'].dropna().iloc[-1])
-        ema = float(calculate_ema(df, window=5).dropna().iloc[-1])
-        sma = float(calculate_sma(df, window=5).dropna().iloc[-1])
+        rsi_series = calculate_rsi(df, window=5)
+        ema_series = calculate_ema(df, window=3)
+        sma_series = calculate_sma(df, window=3)
         macd, macd_signal = calculate_macd(df, fast=5, slow=13, signal=3)
-        macd = float(macd.dropna().iloc[-1])
-        macd_signal = float(macd_signal.dropna().iloc[-1])
+
+        rsi = float(rsi_series.dropna().iloc[-1])
+        close = float(df['Close'].dropna().iloc[-1])
+        ema = float(ema_series.dropna().iloc[-1])
+        sma = float(sma_series.dropna().iloc[-1])
+        macd_val = float(macd.dropna().iloc[-1])
+        macd_sig = float(macd_signal.dropna().iloc[-1])
+        prev_macd = float(macd.dropna().iloc[-2])
     except (IndexError, KeyError, ValueError):
         return "Error"
 
     score = 0
 
-    # RSI scoring: fast window
-    if rsi < 30:
-        score += 1
-    elif rsi > 70:
-        score -= 1
+    # RSI (fast reaction)
+    if rsi < 35:
+        score += 1.5
+    elif rsi > 65:
+        score -= 1.5
 
-    # Momentum signals
+    # Price vs EMA (real-time price movement)
     if close > ema:
-        score += 1
+        score += 1.5
     else:
-        score -= 1
+        score -= 1.5
 
+    # EMA vs SMA (short trend direction)
     if ema > sma:
         score += 1
     else:
         score -= 1
 
-    if macd > macd_signal:
+    # MACD momentum
+    if macd_val > macd_sig:
+        score += 1.5
+    else:
+        score -= 1.5
+
+    # Bonus: MACD acceleration (momentum increasing)
+    if macd_val > prev_macd:
         score += 1
     else:
         score -= 1
 
-    if score >= 2:
+    # Final decision
+    if score >= 3.5:
         return "Buy"
-    elif score <= -2:
+    elif score <= -3.5:
         return "Sell"
     else:
         return "Hold"
+
 
 
 def get_crypto_data(coin_id, days=60):
